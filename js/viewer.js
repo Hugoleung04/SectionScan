@@ -1,6 +1,5 @@
 import * as THREE from "./vendor/three.module.js";
 import { OrbitControls } from "./vendor/OrbitControls.js";
-import { GLTFLoader } from "./vendor/GLTFLoader.js";
 import { planeFromAxis, intersectMesh, projectSegments, bounds2d, worldPositions, stitchLoops } from "./section.js";
 
 export class Viewer {
@@ -138,6 +137,7 @@ export class Viewer {
   }
 
   async loadGLB(file) {
+    const { GLTFLoader } = await import("./vendor/GLTFLoader.js");
     const url = URL.createObjectURL(file);
     const gltf = await new GLTFLoader().loadAsync(url);
     URL.revokeObjectURL(url);
