@@ -41,6 +41,74 @@ $("photoInput").addEventListener("change", (e) => {
   toast("已加入拍攝相片");
 });
 
+function extractFramesFromVideo(file, intervalSec = 0.35, maxFrames = 80) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const video = document.createElement("video");
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = "auto";
+    video.src = url;
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const frames = [];
+
+    video.addEventListener("error", () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("video"));
+    });
+
+    video.addEventListener("loadedmetadata", async () => {
+      const duration = Math.max(0.1, video.duration || 0);
+      canvas.width = video.videoWidth || 1280;
+      canvas.height = video.videoHeight || 720;
+      const step = Math.max(intervalSec, duration / maxFrames);
+      let t = 0;
+      const grab = () => new Promise((ok) => {
+        const onSeek = () => {
+          video.removeEventListener("seeked", onSeek);
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob((blob) => {
+            if (blob) {
+              frames.push(new File([blob], `frame-${frames.length + 1}.jpg`, { type: "image/jpeg" }));
+            }
+            ok();
+          }, "image/jpeg", 0.86);
+        };
+        video.addEventListener("seeked", onSeek);
+        video.currentTime = Math.min(t, duration - 0.05);
+      });
+      try {
+        while (t < duration - 0.05 && frames.length < maxFrames) {
+          await grab();
+          t += step;
+        }
+        URL.revokeObjectURL(url);
+        resolve(frames);
+      } catch (err) {
+        URL.revokeObjectURL(url);
+        reject(err);
+      }
+    });
+  });
+}
+
+$("videoInput").addEventListener("change", async (e) => {
+  const file = e.target.files?.[0];
+  e.target.value = "";
+  if (!file) return;
+  toast("正在由影片抽格，請稍等");
+  try {
+    const frames = await extractFramesFromVideo(file);
+    photos.push(...frames);
+    renderThumbs();
+    toast(`已由影片抽出 ${frames.length} 張相片`);
+  } catch (err) {
+    console.error(err);
+    toast("影片抽格失敗，請改用較短影片或改拍相片");
+  }
+});
+
 $("clearPhotos").addEventListener("click", () => {
   photos.length = 0;
   renderThumbs();

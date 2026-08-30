@@ -37,7 +37,7 @@
       <section id="panel-capture" class="panel active">
         <div class="card">
           <h2>拍攝物件</h2>
-          <p>繞物件一圈拍攝。物件直徑建議不超過 2 米。重疊約 60–80%，動作要慢。</p>
+          <p>可以拍多張相片，或者錄一段慢速繞行影片。影片會自動抽格變成建模用相片。物件直徑建議不超過 2 米，動作要慢、畫面要清楚。</p>
         </div>
         <div class="thumbs" id="thumbs"></div>
         <div class="card">
@@ -83,11 +83,11 @@
     <footer class="dock">
       <div class="dock-group dock-capture">
         <div class="row">
-          <label class="file-btn primary">拍攝／加入相片
+          <label class="file-btn primary">拍攝相片
             <input id="photoInput" type="file" accept="image/*" capture="environment" multiple />
           </label>
-          <label class="file-btn">匯入 GLB
-            <input id="glbInput" type="file" accept=".glb,.gltf,model/gltf-binary" />
+          <label class="file-btn primary">錄影／上傳影片
+            <input id="videoInput" type="file" accept="video/*" capture="environment" />
           </label>
         </div>
         <div class="row">
@@ -96,8 +96,11 @@
           <button id="useDemoBowl">示範碗</button>
         </div>
         <div class="row">
-          <button id="buildFromPhotos">由相片生成</button>
-          <button id="clearPhotos" class="ghost">清空相片</button>
+          <label class="file-btn">匯入 GLB
+            <input id="glbInput" type="file" accept=".glb,.gltf,model/gltf-binary" />
+          </label>
+          <button id="buildFromPhotos">由相片／影片生成</button>
+          <button id="clearPhotos" class="ghost">清空</button>
         </div>
       </div>
 
