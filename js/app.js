@@ -144,6 +144,46 @@ $("clearMeasure").addEventListener("click", () => {
   viewer.draw2d();
 });
 
+function renderSectionList() {
+  const box = $("sectionList");
+  if (!box) return;
+  box.innerHTML = "";
+  viewer.savedSections.forEach((item, i) => {
+    const btn = document.createElement("button");
+    btn.textContent = `${item.axis.toUpperCase()} ${item.value.toFixed(2)}`;
+    if (item.id === viewer.activeSectionId) btn.classList.add("on");
+    btn.addEventListener("click", () => {
+      viewer.showSavedSection(item.id);
+      $("planeSlider").value = String(item.value);
+      $("planeLabel").textContent = item.value.toFixed(2);
+      setAxis(item.axis);
+      viewer.showSavedSection(item.id);
+      show("panel-section");
+      updateMetrics();
+    });
+    box.appendChild(btn);
+    if (i === 0 && !btn.textContent) btn.textContent = "截面 1";
+  });
+}
+
+$("selectSection").addEventListener("click", () => {
+  const item = viewer.selectCurrentSection();
+  if (!item) {
+    toast("呢個位置未切開到物件，試下郁切面");
+    return;
+  }
+  renderSectionList();
+  show("panel-section");
+  updateMetrics();
+  toast("已選取，而家只顯示呢個截面形狀");
+});
+
+$("backToModel").addEventListener("click", () => {
+  viewer.setShapeOnly(false);
+  viewer.updateSection();
+  show("panel-model");
+});
+
 function updateMetrics() {
   const b = viewer.lines2d?.length ? undefined : null;
   // metrics updated in draw2d; also fill cards

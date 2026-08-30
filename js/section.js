@@ -53,6 +53,57 @@ function basis(plane) {
   return { u, v };
 }
 
+function key(p, digits = 5) {
+  return `${p[0].toFixed(digits)},${p[1].toFixed(digits)}`;
+}
+
+export function stitchLoops(lines) {
+  const unused = lines.map((l) => ({ a: l.a, b: l.b }));
+  const loops = [];
+  const open = [];
+  while (unused.length) {
+    const start = unused.pop();
+    const pts = [start.a, start.b];
+    let changed = true;
+    while (changed) {
+      changed = false;
+      const head = pts[0];
+      const tail = pts[pts.length - 1];
+      for (let i = 0; i < unused.length; i++) {
+        const s = unused[i];
+        if (key(s.a) === key(tail)) {
+          pts.push(s.b);
+          unused.splice(i, 1);
+          changed = true;
+          break;
+        }
+        if (key(s.b) === key(tail)) {
+          pts.push(s.a);
+          unused.splice(i, 1);
+          changed = true;
+          break;
+        }
+        if (key(s.a) === key(head)) {
+          pts.unshift(s.b);
+          unused.splice(i, 1);
+          changed = true;
+          break;
+        }
+        if (key(s.b) === key(head)) {
+          pts.unshift(s.a);
+          unused.splice(i, 1);
+          changed = true;
+          break;
+        }
+      }
+    }
+    const closed = pts.length > 2 && key(pts[0]) === key(pts[pts.length - 1]);
+    if (closed) loops.push(pts);
+    else open.push(pts);
+  }
+  return { loops, open };
+}
+
 export function projectSegments(segments, plane) {
   const { u, v } = basis(plane);
   return segments.map(([p, q]) => ({

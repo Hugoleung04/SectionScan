@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { planeFromAxis, intersectMesh, projectSegments, bounds2d, worldPositions } from "./section.js";
+import { planeFromAxis, intersectMesh, projectSegments, bounds2d, worldPositions, stitchLoops } from "./section.js";
 
 export class Viewer {
   constructor(canvas3d, canvas2d) {
@@ -13,9 +13,14 @@ export class Viewer {
     this.mmPerUnit = 280; // default: demo vase height 1 unit -> 280mm after fit
     this.modelHeightUnits = 1;
     this.lines2d = [];
+    this.loops2d = [];
+    this.open2d = [];
     this.measure = [];
     this.pickScale = false;
     this.scalePts = [];
+    this.savedSections = [];
+    this.activeSectionId = null;
+    this.shapeOnly = false;
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x141821);
@@ -30,7 +35,8 @@ export class Viewer {
     const dir = new THREE.DirectionalLight(0xffffff, 1.2);
     dir.position.set(2, 3, 2);
     this.scene.add(dir);
-    this.scene.add(new THREE.GridHelper(3, 12, 0x2a3344, 0x222a38));
+    this.grid = new THREE.GridHelper(3, 12, 0x2a3344, 0x222a38);
+    this.scene.add(this.grid);
 
     this.modelGroup = new THREE.Group();
     this.scene.add(this.modelGroup);
@@ -196,6 +202,48 @@ export class Viewer {
     this.sectionLines.geometry = new THREE.BufferGeometry();
     this.sectionLines.geometry.setAttribute("position", new THREE.BufferAttribute(arr, 3));
     this.lines2d = projectSegments(segs, plane);
+    const stitched = stitchLoops(this.lines2d);
+    this.loops2d = stitched.loops;
+    this.open2d = stitched.open;
+    this.draw2d();
+  }
+
+  selectCurrentSection() {
+    if (!this.lines2d.length) return null;
+    const id = Date.now();
+    const item = {
+      id,
+      axis: this.axis,
+      value: this.planeValue,
+      lines: this.lines2d,
+      loops: this.loops2d,
+      open: this.open2d
+    };
+    this.savedSections.unshift(item);
+    this.activeSectionId = id;
+    this.setShapeOnly(true);
+    return item;
+  }
+
+  showSavedSection(id) {
+    const item = this.savedSections.find((s) => s.id === id);
+    if (!item) return;
+    this.activeSectionId = id;
+    this.axis = item.axis;
+    this.planeValue = item.value;
+    this.lines2d = item.lines;
+    this.loops2d = item.loops;
+    this.open2d = item.open;
+    this.setShapeOnly(true);
+    this.updateSection();
+  }
+
+  setShapeOnly(on) {
+    this.shapeOnly = on;
+    this.modelGroup.visible = !on;
+    this.grid.visible = !on;
+    this.planeHelper.visible = !on;
+    this.sectionLines.visible = true;
     this.draw2d();
   }
 
@@ -225,18 +273,36 @@ export class Viewer {
     const oy = pad + (h - pad * 2 - b.h * s) / 2;
     this._map2d = { b, s, ox, oy };
 
-    ctx.strokeStyle = "#2a3344";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(ox, oy, b.w * s, b.h * s);
+    const mapX = (x) => ox + (x - b.minX) * s;
+    const mapY = (y) => oy + (b.maxY - y) * s;
+    this._map2d = { b, s, ox, oy };
 
+    ctx.fillStyle = this.shapeOnly ? "rgba(110,224,196,0.28)" : "rgba(110,224,196,0.16)";
     ctx.strokeStyle = "#6ee0c4";
-    ctx.lineWidth = 2 * devicePixelRatio;
-    ctx.beginPath();
-    for (const l of this.lines2d) {
-      ctx.moveTo(ox + (l.a[0] - b.minX) * s, oy + (b.maxY - l.a[1]) * s);
-      ctx.lineTo(ox + (l.b[0] - b.minX) * s, oy + (b.maxY - l.b[1]) * s);
+    ctx.lineWidth = 3 * devicePixelRatio;
+    ctx.lineJoin = "round";
+    const paths = this.loops2d.length ? this.loops2d : this.open2d;
+    if (this.loops2d.length) {
+      ctx.beginPath();
+      this.loops2d.forEach((loop) => {
+        loop.forEach((p, i) => {
+          if (i === 0) ctx.moveTo(mapX(p[0]), mapY(p[1]));
+          else ctx.lineTo(mapX(p[0]), mapY(p[1]));
+        });
+        ctx.closePath();
+      });
+      ctx.fill();
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      paths.forEach((poly) => {
+        poly.forEach((p, i) => {
+          if (i === 0) ctx.moveTo(mapX(p[0]), mapY(p[1]));
+          else ctx.lineTo(mapX(p[0]), mapY(p[1]));
+        });
+      });
+      ctx.stroke();
     }
-    ctx.stroke();
 
     const widthMm = this.toMm(b.w);
     const heightMm = this.toMm(b.h);

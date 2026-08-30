@@ -58,7 +58,8 @@
           <div class="metric"><b>--</b><span>截面寬</span></div>
           <div class="metric"><b>--</b><span>截面高</span></div>
         </div>
-        <div class="hint">在截面圖上點兩點可量距離。這是外表面被切開的輪廓，不是內部 CT。</div>
+        <div class="hint">只顯示你選取嘅截面形狀。喺圖上點兩點可以量距離。</div>
+        <div class="section-list" id="sectionList"></div>
         <canvas id="view2d"></canvas>
       </section>
 
@@ -120,12 +121,18 @@
           <input id="heightMm" type="number" inputmode="decimal" value="280" placeholder="模型總高 mm" />
           <button id="pickScale">兩點定標</button>
         </div>
+        <div class="row">
+          <button id="selectSection" class="primary">選取並只睇此截面</button>
+        </div>
       </div>
 
       <div class="dock-group dock-section">
         <div class="row">
           <button id="exportSvg" class="primary">匯出截面 SVG</button>
           <button id="clearMeasure" class="ghost">清除量度</button>
+        </div>
+        <div class="row">
+          <button id="backToModel" class="ghost">返回 3D 模型</button>
         </div>
       </div>
     </footer>

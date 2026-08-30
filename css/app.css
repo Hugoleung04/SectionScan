@@ -264,3 +264,23 @@ input[type=number], input[type=text] {
 .axis-pills { display: flex; gap: 6px; }
 .axis-pills button { flex: 1; padding: 10px; }
 .axis-pills button.on { background: #2a3d62; }
+
+.section-list {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 52px;
+  z-index: 5;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+}
+.section-list button {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+.section-list button.on {
+  background: var(--accent);
+  color: #06251d;
+}
