@@ -1,0 +1,13 @@
+在 Xcode 的 Info 加入：
+
+NSCameraUsageDescription
+剖形需要相機，才能拍攝物件四周相片並重建 3D 模型。
+
+NSWorldSensingUsageDescription
+剖形使用 AR 與深度資料，以還原物件真實尺寸。
+
+NSPhotoLibraryUsageDescription
+剖形需要讀取相簿中的掃描相片。
+
+最低系統：iOS 17.0
+建議裝置：iPhone 12 Pro 或更新的 Pro 機型（有 LiDAR）

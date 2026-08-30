@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#0b0d12" />
+  <title>剖形 SectionScan</title>
+  <link rel="stylesheet" href="./css/app.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.1/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.1/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <h1>剖形</h1>
+        <span>掃描外形 · 看橫截面 · 量毫米</span>
+      </div>
+      <div class="badge">iPhone 第一版</div>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-panel="panel-capture">掃描</button>
+      <button class="tab" data-panel="panel-model">模型</button>
+      <button class="tab" data-panel="panel-section">截面</button>
+      <button class="tab" data-panel="panel-info">說明</button>
+    </nav>
+
+    <main class="stage">
+      <section id="panel-capture" class="panel active">
+        <div class="card">
+          <h2>拍攝物件</h2>
+          <p>繞物件一圈拍攝。物件直徑建議不超過 2 米。重疊約 60–80%，動作要慢。</p>
+        </div>
+        <div class="thumbs" id="thumbs"></div>
+        <div class="card">
+          <p id="photoCount">0 張相片</p>
+          <p id="reconNote" style="display:none;color:#ffb020">
+            網頁版不能在手機上即時完成攝影測量重建。請用旁邊的 iOS 專案做 Object Capture，或先用 Polycam / Scaniverse 匯出 GLB 再匯入。
+          </p>
+        </div>
+      </section>
+
+      <section id="panel-model" class="panel panel-fill">
+        <div class="hint">拖動旋轉模型。切面為半透明綠色。定標時請點模型上兩點。</div>
+        <canvas id="view3d"></canvas>
+      </section>
+
+      <section id="panel-section" class="panel panel-fill">
+        <div class="metrics" id="metricBox">
+          <div class="metric"><b>--</b><span>截面寬</span></div>
+          <div class="metric"><b>--</b><span>截面高</span></div>
+        </div>
+        <div class="hint">在截面圖上點兩點可量距離。這是外表面被切開的輪廓，不是內部 CT。</div>
+        <canvas id="view2d"></canvas>
+      </section>
+
+      <section id="panel-info" class="panel">
+        <div class="card">
+          <h2>這個第一版做得到什麼</h2>
+          <ol>
+            <li>用 iPhone 拍攝多張相片，建立掃描工作階段。</li>
+            <li>用示範模型或匯入 GLB，立即查看立體模型。</li>
+            <li>移動切面，看到真實尺寸的橫截面形狀。</li>
+            <li>用物件高度或兩點距離定標到毫米。</li>
+            <li>匯出截面 SVG，可進 CAD。</li>
+          </ol>
+        </div>
+        <div class="card">
+          <h2>還沒做完的部分</h2>
+          <p>相片自動變成精準 3D 網格，需要 iOS Object Capture 或雲端重建。原始碼在 <code>ios/SectionScan</code>。Android 第二期再接雲端。</p>
+        </div>
+        <div class="card">
+          <h2>準確度</h2>
+          <p>小物件加定標：約數毫米。接近 2 米的物件：常見是 1–3 cm，取決於拍攝與定標。請量一段已知長度來校正。</p>
+        </div>
+      </section>
+      <div class="toast" id="toast"></div>
+    </main>
+
+    <footer class="dock">
+      <div class="row">
+        <label class="file-btn primary">拍攝／加入相片
+          <input id="photoInput" type="file" accept="image/*" capture="environment" multiple />
+        </label>
+        <label class="file-btn">匯入 GLB
+          <input id="glbInput" type="file" accept=".glb,.gltf,model/gltf-binary" />
+        </label>
+      </div>
+      <div class="row">
+        <button id="useDemoVase">示範花瓶</button>
+        <button id="useDemoBox">示範箱</button>
+        <button id="useDemoBowl">示範碗</button>
+      </div>
+      <div class="row">
+        <button id="buildFromPhotos">由相片生成</button>
+        <button id="clearPhotos" class="ghost">清空相片</button>
+      </div>
+      <div class="slider-wrap">
+        <label><span>切面位置</span><span id="planeLabel">0.00</span></label>
+        <input id="planeSlider" type="range" min="-0.5" max="0.5" step="0.005" value="0" />
+      </div>
+      <div class="axis-pills">
+        <button id="axisX">X 切面</button>
+        <button id="axisY" class="on">Y 切面</button>
+        <button id="axisZ">Z 切面</button>
+      </div>
+      <div class="row">
+        <input id="heightMm" type="number" inputmode="decimal" value="280" placeholder="模型總高 mm" />
+        <button id="pickScale">兩點定標</button>
+      </div>
+      <div class="row">
+        <button id="exportSvg" class="primary">匯出截面 SVG</button>
+        <button id="clearMeasure" class="ghost">清除量度</button>
+      </div>
+    </footer>
+  </div>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
