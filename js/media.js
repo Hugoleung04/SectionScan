@@ -1,5 +1,6 @@
 (function () {
   const photos = [];
+  const selected = new Set();
   let videoCount = 0;
   const listeners = [];
 
@@ -26,10 +27,30 @@
     if (el) el.textContent = text;
   }
 
+  function isVideo(file) {
+    const type = (file && file.type) || "";
+    const name = (file && file.name) || "";
+    return type.startsWith("video/") || /\.(mp4|mov|m4v|webm)$/i.test(name);
+  }
+
   function notify() {
     listeners.forEach((fn) => {
       try { fn(photos.slice()); } catch (e) { console.error(e); }
     });
+  }
+
+  function toggleSelect(file) {
+    if (isVideo(file)) return;
+    if (selected.has(file)) {
+      selected.delete(file);
+    } else {
+      if (selected.size >= 4) {
+        toast("一次最多揀 4 張不同角度");
+        return;
+      }
+      selected.add(file);
+    }
+    renderThumbs();
   }
 
   function renderThumbs() {
@@ -37,7 +58,7 @@
     if (!box) return;
     box.innerHTML = "";
     photos.forEach((f) => {
-      if (f.type.startsWith("video/")) {
+      if (isVideo(f)) {
         const v = document.createElement("video");
         v.src = URL.createObjectURL(f);
         v.muted = true;
@@ -49,11 +70,14 @@
       const img = document.createElement("img");
       img.src = URL.createObjectURL(f);
       img.alt = f.name || "photo";
+      if (selected.has(f)) img.classList.add("selected");
+      img.addEventListener("click", () => toggleSelect(f));
       box.appendChild(img);
     });
     const parts = [];
     if (photos.length) parts.push(photos.length + " 個檔案");
     if (videoCount) parts.push(videoCount + " 段影片");
+    if (selected.size) parts.push("已揀 " + selected.size + " 張用於建模");
     setStatus(parts.length ? "已加入：" + parts.join("，") : "尚未加入相片或影片");
     notify();
   }
@@ -68,12 +92,12 @@
     setStatus("正在加入 " + files.length + " 個檔案…");
     files.forEach((file) => {
       photos.push(file);
-      if ((file.type || "").startsWith("video/") || /\.(mp4|mov|m4v|webm)$/i.test(file.name || "")) {
+      if (isVideo(file)) {
         videoCount += 1;
       }
     });
     renderThumbs();
-    const videos = files.filter((f) => (f.type || "").startsWith("video/") || /\.(mp4|mov|m4v|webm)$/i.test(f.name || ""));
+    const videos = files.filter(isVideo);
     videos.forEach((file) => extractLater(file));
   }
 
@@ -211,6 +235,7 @@
       clearBtn.addEventListener("click", () => {
         photos.length = 0;
         videoCount = 0;
+        selected.clear();
         renderThumbs();
         toast("已清空素材");
       });
@@ -226,6 +251,7 @@
 
   window.SectionScanMedia = {
     getPhotos: () => photos.slice(),
+    getSelectedPhotos: () => photos.filter((f) => selected.has(f) && !isVideo(f)),
     onChange: (fn) => listeners.push(fn),
     toast,
     setStatus

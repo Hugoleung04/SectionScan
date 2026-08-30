@@ -6,7 +6,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#0b0d12" />
   <title>剖形 SectionScan</title>
-  <link rel="stylesheet" href="./css/app.css?v=12" />
+  <link rel="stylesheet" href="./css/app.css?v=13" />
   <script type="importmap">
   {
     "imports": {
@@ -22,7 +22,7 @@
         <h1>剖形</h1>
         <span>掃描外形 · 看橫截面 · 量毫米</span>
       </div>
-      <div class="badge">v0.9 上傳</div>
+      <div class="badge">v1.0 雲端</div>
     </header>
 
     <nav class="tabs">
@@ -36,16 +36,22 @@
       <section id="panel-capture" class="panel active">
         <div class="card">
           <h2>加入建模素材</h2>
-          <p>用下面系統掣一次揀多張相。揀完撳「加入」。</p>
+          <p>用下面系統掣一次揀多張相。揀完撳「加入」。可點縮圖挑選最多 4 張不同角度；不選則自動取 4 張。</p>
           <p class="pick-label">從相簿加入</p>
           <input id="libraryInput" class="bare-file" type="file" accept="image/*,video/*" multiple />
         </div>
         <div class="thumbs" id="thumbs"></div>
         <div class="card">
+          <h2>Meshy API key</h2>
+          <p>雲端用 Meshy，一次最多 4 張不同角度。這是 AI 重建，不是 20 張 photogrammetry，比例要自己定標。相片會傳到 Meshy。Polycam／Scaniverse 的 GLB 仍可直接匯入。</p>
+          <p><a href="https://www.meshy.ai" target="_blank" rel="noopener">到 meshy.ai 註冊，在 Dashboard 複製 API key</a></p>
+          <div class="row key-row">
+            <input id="meshyKeyInput" type="password" autocomplete="off" placeholder="Meshy API key" />
+            <button type="button" id="saveMeshyKey">儲存</button>
+          </div>
+          <p id="meshyKeyStatus" class="key-status">尚未儲存 API key</p>
           <p id="photoCount">尚未加入相片或影片</p>
-          <p id="reconNote" style="display:none;color:#ffb020">
-            網頁版已收集你的相片／影片格。要得到精準 3D 網格，請再匯入 GLB，或用 Polycam / Scaniverse 處理同一批素材。
-          </p>
+          <p id="reconNote" style="display:none;color:#ffb020"></p>
         </div>
       </section>
 
@@ -60,18 +66,18 @@
 
       <section id="panel-info" class="panel">
         <div class="card">
-          <h2>這個第一版做得到什麼</h2>
+          <h2>這個版本做得到什麼</h2>
           <ol>
-            <li>用 iPhone 拍攝多張相片，建立掃描工作階段。</li>
-            <li>用示範模型或匯入 GLB，立即查看立體模型。</li>
+            <li>用 iPhone 拍攝或加入 1–4 張不同角度相片。</li>
+            <li>用 Meshy 雲端 AI 建成 GLB，或匯入 Polycam／Scaniverse 的 GLB。</li>
             <li>移動切面，看到真實尺寸的橫截面形狀。</li>
             <li>用物件高度或兩點距離定標到毫米。</li>
             <li>匯出截面 SVG，可進 CAD。</li>
           </ol>
         </div>
         <div class="card">
-          <h2>還沒做完的部分</h2>
-          <p>相片自動變成精準 3D 網格，需要 iOS Object Capture 或雲端重建。原始碼在 <code>ios/SectionScan</code>。Android 第二期再接雲端。</p>
+          <h2>雲端建模（已上線）</h2>
+          <p>網頁版已接上 Meshy Multi-Image to 3D：一次 1–4 個視角，屬 AI 重建而非傳統 photogrammetry。載入後請自行定標毫米。相片會離開手機傳到 Meshy。要更高精度，請用 Polycam／Scaniverse 匯出 GLB 再匯入。</p>
         </div>
         <div class="card">
           <h2>準確度</h2>
@@ -155,7 +161,7 @@
       </div>
     </footer>
   </div>
-  <script src="./js/media.js?v=12"></script>
-  <script type="module" src="./js/app.js?v=12"></script>
+  <script src="./js/media.js?v=13"></script>
+  <script type="module" src="./js/app.js?v=13"></script>
 </body>
 </html>

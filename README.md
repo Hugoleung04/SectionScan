@@ -2,11 +2,12 @@
 
 用手機拍攝物件、查看 3D 模型、切開橫截面，並以毫米量度外形。
 
-這是第一版。網頁 App 可立刻試用。完整「相片自動重建 3D」需要之後在 Xcode 接上 Apple Object Capture。
+這是第一版。網頁 App 可立刻試用。iOS 原生 App 已接上 Apple Object Capture：在 Mac 用 Xcode 打開 `ios/SectionScan.xcodeproj`，於真機拍攝或匯入相片，重建 USDZ。
 
 ## 現在就能做的事
 
 - 用 iPhone 拍攝或加入多張相片
+- 用 Meshy 雲端把 1–4 張不同角度相片建成 GLB
 - 載入示範模型（花瓶／箱／碗）練習切面
 - 匯入 GLB（Polycam、Scaniverse、RealityScan 匯出檔）
 - 移動 X / Y / Z 切面
@@ -14,6 +15,18 @@
 - 用模型總高或兩點距離定標
 - 在截面上點兩點量距離
 - 匯出截面 SVG
+
+## 雲端建模（Meshy）
+
+GitHub Pages 是靜態網站，沒有自家後端。iPhone Safari 把相片直接交給 [Meshy](https://www.meshy.ai) Multi-Image to 3D，下載 GLB 後在本 App 切開截面。
+
+1. 到 [meshy.ai](https://www.meshy.ai) 註冊，在 Dashboard 複製 API key
+2. 用 Safari 打開本站，在「掃描」頁貼上並儲存 key（只留在這部手機的 localStorage，不會寫進原始碼）
+3. 加入 1–4 張不同角度相片（可點縮圖挑選；不選則自動取 4 張）
+4. 撳「用已上傳素材建模」，等候雲端完成
+5. 載入後請輸入真實高度或兩點定標（毫米）
+
+限制：這是 AI 重建，不是 20 張 photogrammetry；一次最多 4 視角；會消耗 Meshy 額度；相片會離開手機傳到 Meshy。要更高精度，請用 Polycam / Scaniverse 匯出 GLB 再匯入。
 
 ## 用 GitHub Pages 立刻在 iPhone 打開
 
@@ -48,10 +61,12 @@ python3 -m http.server 8080
 index.html              網頁 App 入口
 css/app.css
 js/app.js
+js/recon.js             Meshy 雲端建模（key 存在 localStorage）
 js/viewer.js
 js/section.js           切面求交演算法
-ios/SectionScan/        iOS SwiftUI 骨架
-ios/INFO.plist.notes.txt
+ios/SectionScan.xcodeproj  iOS 原生 App（Object Capture）
+ios/SectionScan/        SwiftUI + Photogrammetry
+ios/README.md           真機執行、權限、限制
 serve.sh
 ```
 
@@ -61,11 +76,17 @@ serve.sh
 - 要真實毫米必須先定標（輸入高度，或點兩點輸入已知距離）
 - 小物件加定標：常見數毫米誤差
 - 接近 2 米：常見 1–3 cm，取決於拍攝與定標
-- 網頁版不會把相片直接算成精準 3D 網格；請匯入 GLB，或使用 ios/ 接 Object Capture
+- 雲端 Meshy 是 AI 重建（1–4 視角），不是傳統 photogrammetry；比例請自行定標。更高精度請匯入 Polycam / Scaniverse GLB，或用 iOS App（`ios/SectionScan.xcodeproj`）做 Object Capture
 
-## iOS 下一步
+## iOS App（Apple Object Capture）
 
-用 Xcode 開新 iOS App，把 `ios/SectionScan` 的 Swift 檔加進去，最低 iOS 17。權限說明見 `ios/INFO.plist.notes.txt`。建議 iPhone Pro（有 LiDAR）較容易得到真實比例。
+已不是骨架。在 Mac 用 Xcode 打開 **`ios/SectionScan.xcodeproj`**，Signing 選 Team，插上 iPhone（iOS 17+，建議 Pro／LiDAR）執行。模擬器不能重建 3D。
+
+- 掂描：系統引導拍攝（`ObjectCaptureSession`），或從相簿一次揀一批相片
+- 模型：`PhotogrammetrySession` 輸出 USDZ，RealityKit 預覽，系統分享表 AirDrop／檔案
+- 截面：仍用網頁版（把 USDZ 匯出後匯入）
+
+詳細步驟與限制見 `ios/README.md`。
 
 ## License
 
