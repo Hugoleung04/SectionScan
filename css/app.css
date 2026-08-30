@@ -317,3 +317,13 @@ input[type=number], input[type=text] {
   background: var(--accent);
   color: #06251d;
 }
+
+.sr-file {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0.01;
+  pointer-events: none;
+}

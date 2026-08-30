@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#0b0d12" />
   <title>剖形 SectionScan</title>
-  <link rel="stylesheet" href="./css/app.css?v=8" />
+  <link rel="stylesheet" href="./css/app.css?v=9" />
   <script type="importmap">
   {
     "imports": {
@@ -82,26 +82,16 @@
     <footer class="dock">
       <div class="dock-group dock-capture">
         <div class="row">
-          <label class="file-btn">拍張相
-            <input id="cameraPhotoInput" type="file" accept="image/*,.heic,.heif,.jpg,.jpeg,.png" capture="environment" />
-          </label>
-          <label class="file-btn">錄一段影片
-            <input id="cameraVideoInput" type="file" accept="video/*,.mov,.mp4,.m4v" capture="environment" />
-          </label>
+          <button type="button" class="file-btn" id="cameraPhotoBtn">拍張相</button>
+          <button type="button" class="file-btn" id="cameraVideoBtn">錄一段影片</button>
         </div>
         <div class="row">
-          <label class="file-btn primary">上傳多張相片
-            <input id="photoInput" type="file" accept="image/*,.heic,.heif,.jpg,.jpeg,.png,.webp" multiple />
-          </label>
-          <label class="file-btn primary">上傳影片
-            <input id="videoInput" type="file" accept="video/*,.mov,.mp4,.m4v" multiple />
-          </label>
+          <button type="button" class="file-btn primary" id="photoBtn">上傳多張相片</button>
+          <button type="button" class="file-btn primary" id="videoBtn">上傳影片</button>
         </div>
         <div class="row">
-          <label class="file-btn">匯入 GLB
-            <input id="glbInput" type="file" accept=".glb,.gltf,model/gltf-binary" />
-          </label>
-          <button id="buildFromPhotos" class="primary">用已上傳素材建模</button>
+          <button type="button" class="file-btn" id="glbBtn">匯入 GLB</button>
+          <button type="button" id="buildFromPhotos" class="primary">用已上傳素材建模</button>
         </div>
         <div class="row">
           <button id="useDemoVase">示範花瓶</button>
@@ -153,7 +143,12 @@
       </div>
     </footer>
   </div>
-  <script src="./js/media.js?v=8"></script>
-  <script type="module" src="./js/app.js?v=8"></script>
+  <input class="sr-file" id="cameraPhotoInput" type="file" accept="image/*,.heic,.heif,.jpg,.jpeg,.png" capture="environment" />
+  <input class="sr-file" id="cameraVideoInput" type="file" accept="video/*,.mov,.mp4,.m4v" capture="environment" />
+  <input class="sr-file" id="photoInput" type="file" accept="image/*,.heic,.heif,.jpg,.jpeg,.png,.webp" multiple />
+  <input class="sr-file" id="videoInput" type="file" accept="video/*,.mov,.mp4,.m4v" multiple />
+  <input class="sr-file" id="glbInput" type="file" accept=".glb,.gltf,model/gltf-binary" />
+  <script src="./js/media.js?v=9"></script>
+  <script type="module" src="./js/app.js?v=9"></script>
 </body>
 </html>

@@ -185,7 +185,25 @@
     });
   }
 
+  function openPicker(id) {
+    const el = $(id);
+    if (!el) return;
+    el.value = "";
+    el.click();
+  }
+
   function bind() {
+    const pairs = [
+      ["photoBtn", "photoInput"],
+      ["videoBtn", "videoInput"],
+      ["cameraPhotoBtn", "cameraPhotoInput"],
+      ["cameraVideoBtn", "cameraVideoInput"],
+      ["glbBtn", "glbInput"]
+    ];
+    pairs.forEach(([btnId, inputId]) => {
+      const btn = $(btnId);
+      if (btn) btn.addEventListener("click", () => openPicker(inputId));
+    });
     hook("photoInput", (e) => {
       addFiles(e.target.files, "上傳相片");
       e.target.value = "";
