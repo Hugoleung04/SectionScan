@@ -327,3 +327,19 @@ input[type=number], input[type=text] {
   color: #06251d;
 }
 
+
+.pick-label {
+  margin: 12px 0 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.bare-file {
+  display: block;
+  width: 100%;
+  font-size: 16px;
+  color: var(--text);
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 8px;
+}
