@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#0b0d12" />
   <title>剖形 SectionScan</title>
-  <link rel="stylesheet" href="./css/app.css" />
+  <link rel="stylesheet" href="./css/app.css?v=4" />
   <script type="importmap">
   {
     "imports": {
@@ -23,7 +23,7 @@
         <h1>剖形</h1>
         <span>掃描外形 · 看橫截面 · 量毫米</span>
       </div>
-      <div class="badge">iPhone 第一版</div>
+      <div class="badge">v0.4 可上傳</div>
     </header>
 
     <nav class="tabs">
@@ -36,14 +36,14 @@
     <main class="stage">
       <section id="panel-capture" class="panel active">
         <div class="card">
-          <h2>拍攝物件</h2>
-          <p>可以拍多張相片，或者錄一段慢速繞行影片。影片會自動抽格變成建模用相片。物件直徑建議不超過 2 米，動作要慢、畫面要清楚。</p>
+          <h2>加入建模素材</h2>
+          <p>可以一齊用：多張相片 + 一段或幾段影片。影片會抽格。iPhone 請用「上傳」掣先可以從相簿揀檔，唔好得相機。</p>
         </div>
         <div class="thumbs" id="thumbs"></div>
         <div class="card">
-          <p id="photoCount">0 張相片</p>
+          <p id="photoCount">尚未加入相片或影片</p>
           <p id="reconNote" style="display:none;color:#ffb020">
-            網頁版不能在手機上即時完成攝影測量重建。請用旁邊的 iOS 專案做 Object Capture，或先用 Polycam / Scaniverse 匯出 GLB 再匯入。
+            網頁版已收集你的相片／影片格。要得到精準 3D 網格，請再匯入 GLB，或用 Polycam / Scaniverse 處理同一批素材。
           </p>
         </div>
       </section>
@@ -83,24 +83,31 @@
     <footer class="dock">
       <div class="dock-group dock-capture">
         <div class="row">
-          <label class="file-btn primary">拍攝相片
-            <input id="photoInput" type="file" accept="image/*" capture="environment" multiple />
+          <label class="file-btn">拍張相
+            <input id="cameraPhotoInput" type="file" accept="image/*" capture="environment" />
           </label>
-          <label class="file-btn primary">錄影／上傳影片
-            <input id="videoInput" type="file" accept="video/*" capture="environment" />
+          <label class="file-btn">錄一段影片
+            <input id="cameraVideoInput" type="file" accept="video/*" capture="environment" />
           </label>
         </div>
         <div class="row">
-          <button id="useDemoVase">示範花瓶</button>
-          <button id="useDemoBox">示範箱</button>
-          <button id="useDemoBowl">示範碗</button>
+          <label class="file-btn primary">上傳多張相片
+            <input id="photoInput" type="file" accept="image/*" multiple />
+          </label>
+          <label class="file-btn primary">上傳影片
+            <input id="videoInput" type="file" accept="video/mp4,video/quicktime,video/*" multiple />
+          </label>
         </div>
         <div class="row">
           <label class="file-btn">匯入 GLB
             <input id="glbInput" type="file" accept=".glb,.gltf,model/gltf-binary" />
           </label>
-          <button id="buildFromPhotos">由相片／影片生成</button>
-          <button id="clearPhotos" class="ghost">清空</button>
+          <button id="buildFromPhotos" class="primary">用已上傳素材建模</button>
+        </div>
+        <div class="row">
+          <button id="useDemoVase">示範花瓶</button>
+          <button id="useDemoBox">示範箱</button>
+          <button id="clearPhotos" class="ghost">清空素材</button>
         </div>
       </div>
 
@@ -147,6 +154,6 @@
       </div>
     </footer>
   </div>
-  <script type="module" src="./js/app.js"></script>
+  <script type="module" src="./js/app.js?v=4"></script>
 </body>
 </html>

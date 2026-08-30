@@ -3,6 +3,7 @@ import { Viewer } from "./viewer.js";
 const $ = (id) => document.getElementById(id);
 const viewer = new Viewer($("view3d"), $("view2d"));
 const photos = [];
+let videoCount = 0;
 
 function show(id) {
   document.querySelectorAll(".panel").forEach((p) => p.classList.remove("active"));
@@ -32,86 +33,145 @@ function renderThumbs() {
     img.src = URL.createObjectURL(f);
     $("thumbs").appendChild(img);
   });
-  $("photoCount").textContent = `${photos.length} 張相片`;
+  const parts = [];
+  if (photos.length) parts.push(`${photos.length} 張相片／影片格`);
+  if (videoCount) parts.push(`${videoCount} 段影片`);
+  $("photoCount").textContent = parts.length ? `已準備：${parts.join("，")}` : "尚未加入相片或影片";
 }
 
-$("photoInput").addEventListener("change", (e) => {
-  photos.push(...Array.from(e.target.files || []));
+function addPhotos(list, label) {
+  const files = Array.from(list || []).filter((f) => f.type.startsWith("image/") || f.name.match(/\.(jpg|jpeg|png|heic|webp)$/i));
+  if (!files.length) return 0;
+  photos.push(...files);
   renderThumbs();
-  toast("已加入拍攝相片");
-});
+  toast(`${label}：已加入 ${files.length} 張`);
+  return files.length;
+}
 
-function extractFramesFromVideo(file, intervalSec = 0.35, maxFrames = 80) {
+async function addVideos(list) {
+  const files = Array.from(list || []).filter((f) => f.type.startsWith("video/") || f.name.match(/\.(mp4|mov|m4v|webm)$/i));
+  if (!files.length) {
+    toast("未揀到影片檔");
+    return;
+  }
+  toast(`正在處理 ${files.length} 段影片…`);
+  let total = 0;
+  for (const file of files) {
+    try {
+      const frames = await extractFramesFromVideo(file);
+      photos.push(...frames);
+      videoCount += 1;
+      total += frames.length;
+    } catch (err) {
+      console.error(err);
+      toast(`${file.name} 抽格失敗`);
+    }
+  }
+  renderThumbs();
+  toast(total ? `影片處理完成，共抽出 ${total} 格` : "影片抽格失敗，試 MP4／較短影片");
+}
+
+function extractFramesFromVideo(file, intervalSec = 0.4, maxFrames = 60) {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const video = document.createElement("video");
     video.muted = true;
+    video.defaultMuted = true;
     video.playsInline = true;
+    video.setAttribute("playsinline", "true");
+    video.setAttribute("webkit-playsinline", "true");
     video.preload = "auto";
     video.src = url;
+    video.load();
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     const frames = [];
 
-    video.addEventListener("error", () => {
+    const failTimer = setTimeout(() => {
       URL.revokeObjectURL(url);
-      reject(new Error("video"));
-    });
+      reject(new Error("timeout"));
+    }, 45000);
 
-    video.addEventListener("loadedmetadata", async () => {
-      const duration = Math.max(0.1, video.duration || 0);
-      canvas.width = video.videoWidth || 1280;
-      canvas.height = video.videoHeight || 720;
+    const finish = (err) => {
+      clearTimeout(failTimer);
+      URL.revokeObjectURL(url);
+      video.removeAttribute("src");
+      video.load();
+      if (err) reject(err);
+      else resolve(frames);
+    };
+
+    video.addEventListener("error", () => finish(new Error("video")));
+
+    const start = async () => {
+      const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 1;
+      canvas.width = Math.min(1280, video.videoWidth || 1280);
+      canvas.height = Math.min(1280, video.videoHeight || 720);
+      try {
+        await video.play();
+        video.pause();
+      } catch (_) {}
       const step = Math.max(intervalSec, duration / maxFrames);
       let t = 0;
-      const grab = () => new Promise((ok) => {
-        const onSeek = () => {
-          video.removeEventListener("seeked", onSeek);
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          canvas.toBlob((blob) => {
-            if (blob) {
-              frames.push(new File([blob], `frame-${frames.length + 1}.jpg`, { type: "image/jpeg" }));
-            }
+      const grab = (time) => new Promise((ok) => {
+        const done = () => {
+          video.removeEventListener("seeked", done);
+          try {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob((blob) => {
+              if (blob) frames.push(new File([blob], `video-frame-${Date.now()}-${frames.length}.jpg`, { type: "image/jpeg" }));
+              ok();
+            }, "image/jpeg", 0.82);
+          } catch (e) {
             ok();
-          }, "image/jpeg", 0.86);
+          }
         };
-        video.addEventListener("seeked", onSeek);
-        video.currentTime = Math.min(t, duration - 0.05);
-      });
-      try {
-        while (t < duration - 0.05 && frames.length < maxFrames) {
-          await grab();
-          t += step;
+        video.addEventListener("seeked", done);
+        try {
+          video.currentTime = Math.min(time, Math.max(0, duration - 0.08));
+        } catch (e) {
+          setTimeout(done, 80);
         }
-        URL.revokeObjectURL(url);
-        resolve(frames);
-      } catch (err) {
-        URL.revokeObjectURL(url);
-        reject(err);
+        setTimeout(() => {
+          if (video.seeking) return;
+        }, 1200);
+      });
+      while (t < duration && frames.length < maxFrames) {
+        await grab(t);
+        t += step;
       }
-    });
+      finish();
+    };
+
+    if (video.readyState >= 1) start();
+    else video.addEventListener("loadedmetadata", start, { once: true });
   });
 }
 
-$("videoInput").addEventListener("change", async (e) => {
-  const file = e.target.files?.[0];
+$("photoInput").addEventListener("change", (e) => {
+  addPhotos(e.target.files, "上傳相片");
   e.target.value = "";
-  if (!file) return;
-  toast("正在由影片抽格，請稍等");
-  try {
-    const frames = await extractFramesFromVideo(file);
-    photos.push(...frames);
-    renderThumbs();
-    toast(`已由影片抽出 ${frames.length} 張相片`);
-  } catch (err) {
-    console.error(err);
-    toast("影片抽格失敗，請改用較短影片或改拍相片");
-  }
+});
+$("cameraPhotoInput").addEventListener("change", (e) => {
+  addPhotos(e.target.files, "拍攝相片");
+  e.target.value = "";
+});
+$("videoInput").addEventListener("change", async (e) => {
+  const files = e.target.files;
+  e.target.value = "";
+  await addVideos(files);
+});
+$("cameraVideoInput").addEventListener("change", async (e) => {
+  const files = e.target.files;
+  e.target.value = "";
+  await addVideos(files);
 });
 
 $("clearPhotos").addEventListener("click", () => {
   photos.length = 0;
+  videoCount = 0;
   renderThumbs();
+  toast("已清空素材");
 });
 
 $("useDemoVase").addEventListener("click", () => {
@@ -126,12 +186,14 @@ $("useDemoBox").addEventListener("click", () => {
   show("panel-model");
   toast("已載入示範箱體（高 400 mm）");
 });
-$("useDemoBowl").addEventListener("click", () => {
-  viewer.loadDemo("bowl");
-  $("heightMm").value = "220";
-  show("panel-model");
-  toast("已載入示範碗（高 220 mm）");
-});
+if ($("useDemoBowl")) {
+  $("useDemoBowl").addEventListener("click", () => {
+    viewer.loadDemo("bowl");
+    $("heightMm").value = "220";
+    show("panel-model");
+    toast("已載入示範碗（高 220 mm）");
+  });
+}
 
 $("glbInput").addEventListener("change", async (e) => {
   const file = e.target.files?.[0];
@@ -148,14 +210,14 @@ $("glbInput").addEventListener("change", async (e) => {
 });
 
 $("buildFromPhotos").addEventListener("click", () => {
-  if (photos.length < 8) {
-    toast("建議至少 8 張、最好 30 張以上重疊相片");
+  if (photos.length < 3) {
+    toast("請先上傳相片或影片。建議 20 張以上，或一段慢速繞行影片");
     return;
   }
   $("reconNote").style.display = "block";
   viewer.loadDemo("vase");
   show("panel-model");
-  toast("此網頁版先用示範模型。完整重建請用 iOS 專案或匯入 GLB");
+  toast(`已接收 ${photos.length} 張素材。網頁版暫時用示範模型練習切面；精準模型請匯入 GLB`);
 });
 
 $("axisX").addEventListener("click", () => setAxis("x"));

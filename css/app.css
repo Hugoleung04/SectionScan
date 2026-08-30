@@ -204,14 +204,21 @@ input[type=number], input[type=text] {
   gap: 8px;
   overflow-x: auto;
   padding: 12px;
+  min-height: 96px;
 }
 .thumbs img {
-  width: 72px;
-  height: 72px;
+  width: 84px;
+  height: 84px;
   object-fit: cover;
   border-radius: 10px;
   border: 1px solid var(--line);
   flex: 0 0 auto;
+}
+.thumbs:empty::after {
+  content: "上傳後會在呢度見到縮圖";
+  color: var(--muted);
+  font-size: 13px;
+  padding: 12px 4px;
 }
 
 .card {
