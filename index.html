@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#0b0d12" />
   <title>剖形 SectionScan</title>
-  <link rel="stylesheet" href="./css/app.css?v=9" />
+  <link rel="stylesheet" href="./css/app.css?v=10" />
   <script type="importmap">
   {
     "imports": {
@@ -22,7 +22,7 @@
         <h1>剖形</h1>
         <span>掃描外形 · 看橫截面 · 量毫米</span>
       </div>
-      <div class="badge">v0.6 上傳</div>
+      <div class="badge">v0.7 上傳</div>
     </header>
 
     <nav class="tabs">
@@ -36,7 +36,10 @@
       <section id="panel-capture" class="panel active">
         <div class="card">
           <h2>加入建模素材</h2>
-          <p>可以一齊用：多張相片 + 一段或幾段影片。影片會抽格。iPhone 請用「上傳」掣先可以從相簿揀檔，唔好得相機。</p>
+          <p>可以一齊用：多張相片 + 一段或幾段影片。iPhone 請用下面藍色掣從相簿加入，揀完後撳「加入」。</p>
+          <label class="native-pick">從相簿加入相片或影片
+            <input id="libraryInput" type="file" accept="image/*,video/*,.heic,.heif,.jpg,.jpeg,.png,.mov,.mp4,.m4v" multiple />
+          </label>
         </div>
         <div class="thumbs" id="thumbs"></div>
         <div class="card">
@@ -82,15 +85,25 @@
     <footer class="dock">
       <div class="dock-group dock-capture">
         <div class="row">
-          <button type="button" class="file-btn" id="cameraPhotoBtn">拍張相</button>
-          <button type="button" class="file-btn" id="cameraVideoBtn">錄一段影片</button>
+          <label class="file-btn">拍張相
+            <input id="cameraPhotoInput" type="file" accept="image/*" capture="environment" />
+          </label>
+          <label class="file-btn">錄一段影片
+            <input id="cameraVideoInput" type="file" accept="video/*" capture="environment" />
+          </label>
         </div>
         <div class="row">
-          <button type="button" class="file-btn primary" id="photoBtn">上傳多張相片</button>
-          <button type="button" class="file-btn primary" id="videoBtn">上傳影片</button>
+          <label class="file-btn primary">上傳多張相片
+            <input id="photoInput" type="file" accept="image/*,.heic,.heif,.jpg,.jpeg,.png" multiple />
+          </label>
+          <label class="file-btn primary">上傳影片
+            <input id="videoInput" type="file" accept="video/*,.mov,.mp4,.m4v" multiple />
+          </label>
         </div>
         <div class="row">
-          <button type="button" class="file-btn" id="glbBtn">匯入 GLB</button>
+          <label class="file-btn">匯入 GLB
+            <input id="glbInput" type="file" accept=".glb,.gltf,model/gltf-binary" />
+          </label>
           <button type="button" id="buildFromPhotos" class="primary">用已上傳素材建模</button>
         </div>
         <div class="row">
@@ -143,12 +156,7 @@
       </div>
     </footer>
   </div>
-  <input class="sr-file" id="cameraPhotoInput" type="file" accept="image/*,.heic,.heif,.jpg,.jpeg,.png" capture="environment" />
-  <input class="sr-file" id="cameraVideoInput" type="file" accept="video/*,.mov,.mp4,.m4v" capture="environment" />
-  <input class="sr-file" id="photoInput" type="file" accept="image/*,.heic,.heif,.jpg,.jpeg,.png,.webp" multiple />
-  <input class="sr-file" id="videoInput" type="file" accept="video/*,.mov,.mp4,.m4v" multiple />
-  <input class="sr-file" id="glbInput" type="file" accept=".glb,.gltf,model/gltf-binary" />
-  <script src="./js/media.js?v=9"></script>
-  <script type="module" src="./js/app.js?v=9"></script>
+  <script src="./js/media.js?v=10"></script>
+  <script type="module" src="./js/app.js?v=10"></script>
 </body>
 </html>

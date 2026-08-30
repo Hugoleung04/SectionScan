@@ -18,21 +18,21 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body {
   margin: 0;
-  height: 100%;
-  height: 100dvh;
+  min-height: 100%;
+  min-height: 100dvh;
   background: var(--bg);
   color: var(--text);
   font-family: "SF Pro Text", "PingFang HK", "PingFang TC", "Noto Sans TC", sans-serif;
-  overflow: hidden;
+  overflow: auto;
 }
 
 .app {
-  height: 100%;
-  height: 100dvh;
+  min-height: 100%;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   padding-top: var(--safe-top);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .app.mode-capture,
@@ -162,9 +162,7 @@ html, body {
 
 .dock {
   flex: 0 0 auto;
-  max-height: 46dvh;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow: visible;
   padding: 6px 8px calc(20px + var(--safe-bottom));
   display: grid;
   gap: 6px;
@@ -195,8 +193,9 @@ button.primary { background: var(--accent); color: #06251d; }
 button.ghost { background: transparent; border: 1px solid var(--line); }
 button:disabled { opacity: .45; }
 
-.file-btn { text-align: center; position: relative; overflow: hidden; touch-action: manipulation; }
-.file-btn input[type="file"] {
+.file-btn, .native-pick { text-align: center; position: relative; overflow: visible; touch-action: manipulation; }
+.file-btn input[type="file"],
+.native-pick input[type="file"] {
   position: absolute;
   left: 0;
   top: 0;
@@ -205,9 +204,19 @@ button:disabled { opacity: .45; }
   margin: 0;
   padding: 0;
   opacity: 0.01;
-  font-size: 16px;
+  font-size: 20px;
   cursor: pointer;
   z-index: 2;
+}
+.native-pick {
+  display: block;
+  margin-top: 12px;
+  background: var(--accent);
+  color: #06251d;
+  border-radius: 12px;
+  padding: 14px 8px;
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .slider-wrap {
@@ -318,12 +327,3 @@ input[type=number], input[type=text] {
   color: #06251d;
 }
 
-.sr-file {
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 1px;
-  height: 1px;
-  opacity: 0.01;
-  pointer-events: none;
-}
