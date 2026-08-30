@@ -2,7 +2,7 @@
 
 用手機拍攝物件、查看 3D 模型、切開橫截面，並以毫米量度外形。
 
-這是第一版。網頁 App 可立刻試用。完整「相片自動重建 3D」需要之後在 Xcode 接上 Apple Object Capture。
+這是第一版。網頁 App 可立刻試用。iOS 原生 App 已接上 Apple Object Capture：在 Mac 用 Xcode 打開 `ios/SectionScan.xcodeproj`，於真機拍攝或匯入相片，重建 USDZ。
 
 ## 現在就能做的事
 
@@ -50,8 +50,9 @@ css/app.css
 js/app.js
 js/viewer.js
 js/section.js           切面求交演算法
-ios/SectionScan/        iOS SwiftUI 骨架
-ios/INFO.plist.notes.txt
+ios/SectionScan.xcodeproj  iOS 原生 App（Object Capture）
+ios/SectionScan/        SwiftUI + Photogrammetry
+ios/README.md           真機執行、權限、限制
 serve.sh
 ```
 
@@ -61,11 +62,17 @@ serve.sh
 - 要真實毫米必須先定標（輸入高度，或點兩點輸入已知距離）
 - 小物件加定標：常見數毫米誤差
 - 接近 2 米：常見 1–3 cm，取決於拍攝與定標
-- 網頁版不會把相片直接算成精準 3D 網格；請匯入 GLB，或使用 ios/ 接 Object Capture
+- 網頁版不會把相片直接算成精準 3D 網格；請匯入 GLB，或用 iOS App（`ios/SectionScan.xcodeproj`）做 Object Capture
 
-## iOS 下一步
+## iOS App（Apple Object Capture）
 
-用 Xcode 開新 iOS App，把 `ios/SectionScan` 的 Swift 檔加進去，最低 iOS 17。權限說明見 `ios/INFO.plist.notes.txt`。建議 iPhone Pro（有 LiDAR）較容易得到真實比例。
+已不是骨架。在 Mac 用 Xcode 打開 **`ios/SectionScan.xcodeproj`**，Signing 選 Team，插上 iPhone（iOS 17+，建議 Pro／LiDAR）執行。模擬器不能重建 3D。
+
+- 掂描：系統引導拍攝（`ObjectCaptureSession`），或從相簿一次揀一批相片
+- 模型：`PhotogrammetrySession` 輸出 USDZ，RealityKit 預覽，系統分享表 AirDrop／檔案
+- 截面：仍用網頁版（把 USDZ 匯出後匯入）
+
+詳細步驟與限制見 `ios/README.md`。
 
 ## License
 

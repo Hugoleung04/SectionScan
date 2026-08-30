@@ -3,46 +3,117 @@ import RealityKit
 
 struct ReconstructionView: View {
     @EnvironmentObject var session: ScanSession
-    @State private var message = "Object Capture 需真機與 Xcode 權限。"
+    @State private var showShare = false
 
     var body: some View {
-        VStack(spacing: 16) {
-            Text("3D 重建")
-                .font(.headline)
-            Text(message)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+        ScrollView {
+            VStack(spacing: 16) {
+                Text("3D 模型")
+                    .font(.headline)
 
-            if #available(iOS 17.0, *) {
-                Text("在 Xcode 建立 App 後，把 Guided Capture 接到這裡。建議流程：ObjectCaptureSession 拍攝 → PhotogrammetrySession 重建 USDZ → 在截面頁切開。")
+                if session.isReconstructing {
+                    ProgressView(value: session.reconstructionProgress, total: 1)
+                    Text(session.reconstructionMessage.isEmpty ? "重建中…" : session.reconstructionMessage)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                    Text("請保持 App 在前景。重建很吃記憶體，大型物件可能需要數分鐘。")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } else if let url = session.modelURL {
+                    ModelPreview(url: url)
+                        .frame(minHeight: 320)
+
+                    Text(url.lastPathComponent)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+
+                    Button {
+                        showShare = true
+                    } label: {
+                        Label("分享／匯出 USDZ", systemImage: "square.and.arrow.up")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+
+                    ShareLink(item: url, preview: SharePreview("剖形 3D 模型", image: Image(systemName: "cube"))) {
+                        Label("AirDrop、檔案、其他 App", systemImage: "airdrop")
+                    }
+                    .buttonStyle(.bordered)
+                } else {
+                    Image(systemName: "cube.transparent")
+                        .font(.system(size: 48))
+                        .foregroundStyle(.mint)
+                    Text(emptyMessage)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+
+                if let error = session.lastError, !session.isReconstructing, !error.isEmpty {
+                    Text(error)
+                        .font(.footnote)
+                        .foregroundStyle(.red)
+                        .multilineTextAlignment(.center)
+                }
+
+                if !session.isReconstructing {
+                    Button {
+                        Task { await session.reconstruct() }
+                    } label: {
+                        Label("開始 Object Capture 重建", systemImage: "gearshape.2")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.mint)
+                    .disabled(!session.canReconstruct || !DeviceCapabilities.isReconstructionSupported)
+                }
+
+                Text("成功後會寫入 USDZ（裝置端細節等級為 `.reduced`，這是 iOS 唯一支援的等級）。可用分享表 AirDrop 到 Mac，或匯入網頁版截面工具。")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
-
-            Button("開始 Object Capture（真機）") {
-                message = "請用 Xcode 在真機執行，並加入 NSCameraUsageDescription、NSWorldSensingUsageDescription。"
-            }
-            .buttonStyle(.borderedProminent)
-
-            Text("現階段可先把 Polycam / Scaniverse 的 USDZ 或 GLB 拷進 App，用網頁版截面工具驗證量度流程。")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-
-            Spacer()
+            .padding()
         }
-        .padding()
+        .sheet(isPresented: $showShare) {
+            if let url = session.modelURL {
+                ActivityShareSheet(items: [url])
+            }
+        }
+        .onAppear { session.refreshFromDisk() }
+    }
+
+    private var emptyMessage: String {
+        if !DeviceCapabilities.isReconstructionSupported {
+            return DeviceCapabilities.unsupportedMessage
+        }
+        if session.imageCount == 0 {
+            return "尚未有模型。請到「掂描」用引導拍攝，或從相簿揀選一批相片後重建。"
+        }
+        return "已有 \(session.imageCount) 張相片，按下方按鈕開始 PhotogrammetrySession 重建。"
     }
 }
 
-#if os(iOS)
-@available(iOS 17.0, *)
-enum ObjectCaptureNotes {
-    /// 實作時使用：
-    /// 1. ObjectCaptureSession + ObjectCaptureView 引導拍攝
-    /// 2. 將 HEIC（含深度）交給 PhotogrammetrySession
-    /// 3. 輸出 USDZ，保留真實比例
-    /// 4. RealityKit 載入後做 plane-mesh intersection
-    static let recommendedMinImages = 20
-    static let maxObjectDiameterMeters = 2.0
+struct ModelPreview: View {
+    let url: URL
+
+    var body: some View {
+        Model3D(url: url) { model in
+            model
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+        } placeholder: {
+            ProgressView("載入 USDZ…")
+                .frame(maxWidth: .infinity, minHeight: 280)
+        }
+        .frame(maxWidth: .infinity, minHeight: 280)
+    }
 }
-#endif
+
+struct ActivityShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}

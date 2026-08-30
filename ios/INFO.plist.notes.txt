@@ -1,4 +1,4 @@
-在 Xcode 的 Info 加入：
+權限字串已寫入 SectionScan/Info.plist，Xcode 專案亦會一併帶上。
 
 NSCameraUsageDescription
 剖形需要相機，才能拍攝物件四周相片並重建 3D 模型。
@@ -9,5 +9,11 @@ NSWorldSensingUsageDescription
 NSPhotoLibraryUsageDescription
 剖形需要讀取相簿中的掃描相片。
 
+NSPhotoLibraryAddUsageDescription
+剖形可以把重建後的 3D 模型或掃描相片儲存，方便分享到「檔案」或其他 App。
+
+UIRequiredDeviceCapabilities 含 camera 與 arm64（沒有強制 LiDAR，以免非 Pro 機無法安裝；從相簿重建仍可能可用）。
+
 最低系統：iOS 17.0
 建議裝置：iPhone 12 Pro 或更新的 Pro 機型（有 LiDAR）
+模擬器：Object Capture API 不存在，App 會顯示明確錯誤，不會假裝重建成功。

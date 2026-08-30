@@ -1,0 +1,39 @@
+name: SectionScan
+options:
+  bundleIdPrefix: com.hugoleung
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+  developmentLanguage: zh-Hant
+settings:
+  base:
+    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+    SWIFT_VERSION: "5.0"
+targets:
+  SectionScan:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: SectionScan
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.hugoleung.SectionScan
+        PRODUCT_NAME: SectionScan
+        INFOPLIST_FILE: SectionScan/Info.plist
+        GENERATE_INFOPLIST_FILE: false
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        CODE_SIGN_STYLE: Automatic
+        SUPPORTS_MACCATALYST: false
+        SWIFT_EMIT_LOC_STRINGS: true
+        INFOPLIST_KEY_CFBundleDisplayName: 剖形
+    info:
+      path: SectionScan/Info.plist
+      properties:
+        CFBundleDisplayName: 剖形
+        UILaunchScreen:
+          UIColorName: LaunchBackground
