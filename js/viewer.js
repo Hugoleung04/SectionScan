@@ -21,6 +21,8 @@ export class Viewer {
     this.savedSections = [];
     this.activeSectionId = null;
     this.shapeOnly = false;
+    this.viewMode = "full"; // full | shape | below
+    this.clipPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x141821);
@@ -28,6 +30,7 @@ export class Viewer {
     this.camera.position.set(1.6, 1.1, 1.8);
     this.renderer = new THREE.WebGLRenderer({ canvas: canvas3d, antialias: true });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    this.renderer.localClippingEnabled = true;
     this.controls = new OrbitControls(this.camera, canvas3d);
     this.controls.enableDamping = true;
 
@@ -129,6 +132,7 @@ export class Viewer {
     }
     mesh.name = "scanMesh";
     this.modelGroup.add(mesh);
+    this.enableClippingOnMaterials();
     this.fitAndScale();
     this.mmPerUnit = kind === "box" ? 400 : kind === "bowl" ? 220 : 280;
   }
@@ -139,6 +143,7 @@ export class Viewer {
     URL.revokeObjectURL(url);
     this.clearModel();
     this.modelGroup.add(gltf.scene);
+    this.enableClippingOnMaterials();
     this.fitAndScale();
     this.mmPerUnit = 1000;
   }
@@ -205,6 +210,7 @@ export class Viewer {
     const stitched = stitchLoops(this.lines2d);
     this.loops2d = stitched.loops;
     this.open2d = stitched.open;
+    this.updateClipPlane();
     this.draw2d();
   }
 
@@ -221,7 +227,6 @@ export class Viewer {
     };
     this.savedSections.unshift(item);
     this.activeSectionId = id;
-    this.setShapeOnly(true);
     return item;
   }
 
@@ -234,17 +239,52 @@ export class Viewer {
     this.lines2d = item.lines;
     this.loops2d = item.loops;
     this.open2d = item.open;
-    this.setShapeOnly(true);
     this.updateSection();
+    this.setViewMode(this.viewMode === "full" ? "shape" : this.viewMode);
+  }
+
+  enableClippingOnMaterials() {
+    this.modelGroup.traverse((o) => {
+      if (!o.isMesh) return;
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      mats.forEach((m) => {
+        if (!m) return;
+        m.clippingPlanes = [this.clipPlane];
+        m.clipShadows = true;
+        m.needsUpdate = true;
+      });
+    });
+  }
+
+  updateClipPlane() {
+    if (this.axis === "x") this.clipPlane.set(new THREE.Vector3(-1, 0, 0), this.planeValue);
+    else if (this.axis === "z") this.clipPlane.set(new THREE.Vector3(0, 0, -1), this.planeValue);
+    else this.clipPlane.set(new THREE.Vector3(0, -1, 0), this.planeValue);
+  }
+
+  setViewMode(mode) {
+    this.viewMode = mode;
+    this.shapeOnly = mode === "shape";
+    const clipOn = mode === "below";
+    this.modelGroup.visible = mode !== "shape";
+    this.grid.visible = mode !== "shape";
+    this.planeHelper.visible = mode !== "shape";
+    this.sectionLines.visible = true;
+    this.updateClipPlane();
+    this.modelGroup.traverse((o) => {
+      if (!o.isMesh) return;
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      mats.forEach((m) => {
+        if (!m) return;
+        m.clippingPlanes = clipOn ? [this.clipPlane] : [];
+        m.needsUpdate = true;
+      });
+    });
+    this.draw2d();
   }
 
   setShapeOnly(on) {
-    this.shapeOnly = on;
-    this.modelGroup.visible = !on;
-    this.grid.visible = !on;
-    this.planeHelper.visible = !on;
-    this.sectionLines.visible = true;
-    this.draw2d();
+    this.setViewMode(on ? "shape" : "full");
   }
 
   toMm(units) {
@@ -265,7 +305,7 @@ export class Viewer {
       return;
     }
     const b = bounds2d(this.lines2d);
-    const pad = 48 * devicePixelRatio;
+    const pad = 28 * devicePixelRatio;
     const sx = (w - pad * 2) / b.w;
     const sy = (h - pad * 2) / b.h;
     const s = Math.min(sx, sy);

@@ -226,16 +226,10 @@ input[type=number], input[type=text] {
 .card ol { padding-left: 18px; margin: 8px 0 0; }
 
 .metrics {
-  position: absolute;
-  left: 8px;
-  right: 8px;
-  top: 8px;
-  z-index: 4;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 6px;
   padding: 0;
-  pointer-events: none;
 }
 .metric {
   background: rgba(20,24,33,.92);
@@ -266,11 +260,6 @@ input[type=number], input[type=text] {
 .axis-pills button.on { background: #2a3d62; }
 
 .section-list {
-  position: absolute;
-  left: 8px;
-  right: 8px;
-  bottom: 52px;
-  z-index: 5;
   display: flex;
   gap: 6px;
   overflow-x: auto;

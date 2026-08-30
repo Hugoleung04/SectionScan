@@ -54,12 +54,6 @@
       </section>
 
       <section id="panel-section" class="panel panel-fill">
-        <div class="metrics" id="metricBox">
-          <div class="metric"><b>--</b><span>截面寬</span></div>
-          <div class="metric"><b>--</b><span>截面高</span></div>
-        </div>
-        <div class="hint">只顯示你選取嘅截面形狀。喺圖上點兩點可以量距離。</div>
-        <div class="section-list" id="sectionList"></div>
         <canvas id="view2d"></canvas>
       </section>
 
@@ -122,17 +116,30 @@
           <button id="pickScale">兩點定標</button>
         </div>
         <div class="row">
-          <button id="selectSection" class="primary">選取並只睇此截面</button>
+          <button id="selectSection" class="primary">選取此截面</button>
+        </div>
+        <div class="axis-pills">
+          <button id="modeShape">只睇截面形狀</button>
+          <button id="modeBelow">保留切面以下</button>
         </div>
       </div>
 
       <div class="dock-group dock-section">
+        <div class="metrics" id="metricBox">
+          <div class="metric"><b>--</b><span>截面寬</span></div>
+          <div class="metric"><b>--</b><span>截面高</span></div>
+        </div>
+        <div class="section-list" id="sectionList"></div>
+        <div class="axis-pills">
+          <button id="modeShape2">只睇截面形狀</button>
+          <button id="modeBelow2">保留切面以下</button>
+        </div>
         <div class="row">
           <button id="exportSvg" class="primary">匯出截面 SVG</button>
           <button id="clearMeasure" class="ghost">清除量度</button>
         </div>
         <div class="row">
-          <button id="backToModel" class="ghost">返回 3D 模型</button>
+          <button id="backToModel" class="ghost">顯示完整模型</button>
         </div>
       </div>
     </footer>

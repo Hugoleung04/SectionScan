@@ -166,6 +166,30 @@ function renderSectionList() {
   });
 }
 
+function setModeButtons(mode) {
+  ["modeShape", "modeShape2", "modeBelow", "modeBelow2"].forEach((id) => {
+    const el = $(id);
+    if (!el) return;
+    const isShape = id.startsWith("modeShape");
+    el.classList.toggle("on", mode === "shape" ? isShape : !isShape && mode === "below");
+  });
+}
+
+function applyViewMode(mode) {
+  viewer.setViewMode(mode);
+  setModeButtons(mode);
+  if (mode === "shape") {
+    show("panel-section");
+    toast("只顯示你選取嘅截面形狀");
+  } else if (mode === "below") {
+    show("panel-model");
+    toast("已隱藏切面以上，保留以下部分");
+  } else {
+    show("panel-model");
+  }
+  updateMetrics();
+}
+
 $("selectSection").addEventListener("click", () => {
   const item = viewer.selectCurrentSection();
   if (!item) {
@@ -173,15 +197,17 @@ $("selectSection").addEventListener("click", () => {
     return;
   }
   renderSectionList();
-  show("panel-section");
-  updateMetrics();
-  toast("已選取，而家只顯示呢個截面形狀");
+  applyViewMode(viewer.viewMode === "below" ? "below" : "shape");
 });
 
+$("modeShape").addEventListener("click", () => applyViewMode("shape"));
+$("modeShape2").addEventListener("click", () => applyViewMode("shape"));
+$("modeBelow").addEventListener("click", () => applyViewMode("below"));
+$("modeBelow2").addEventListener("click", () => applyViewMode("below"));
+
 $("backToModel").addEventListener("click", () => {
-  viewer.setShapeOnly(false);
+  applyViewMode("full");
   viewer.updateSection();
-  show("panel-model");
 });
 
 function updateMetrics() {
