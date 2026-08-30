@@ -9,7 +9,9 @@ function show(id) {
   document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
   $(id).classList.add("active");
   document.querySelector(`.tab[data-panel="${id}"]`).classList.add("active");
-  viewer.resize();
+  const mode = id.replace("panel-", "");
+  document.querySelector(".app").className = `app mode-${mode}`;
+  requestAnimationFrame(() => viewer.resize());
 }
 
 document.querySelectorAll(".tab").forEach((btn) => {

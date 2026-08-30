@@ -17,7 +17,7 @@
   </script>
 </head>
 <body>
-  <div class="app">
+  <div class="app mode-capture">
     <header class="topbar">
       <div class="brand">
         <h1>剖形</h1>
@@ -86,39 +86,47 @@
     </main>
 
     <footer class="dock">
-      <div class="row">
-        <label class="file-btn primary">拍攝／加入相片
-          <input id="photoInput" type="file" accept="image/*" capture="environment" multiple />
-        </label>
-        <label class="file-btn">匯入 GLB
-          <input id="glbInput" type="file" accept=".glb,.gltf,model/gltf-binary" />
-        </label>
+      <div class="dock-group dock-capture">
+        <div class="row">
+          <label class="file-btn primary">拍攝／加入相片
+            <input id="photoInput" type="file" accept="image/*" capture="environment" multiple />
+          </label>
+          <label class="file-btn">匯入 GLB
+            <input id="glbInput" type="file" accept=".glb,.gltf,model/gltf-binary" />
+          </label>
+        </div>
+        <div class="row">
+          <button id="useDemoVase">示範花瓶</button>
+          <button id="useDemoBox">示範箱</button>
+          <button id="useDemoBowl">示範碗</button>
+        </div>
+        <div class="row">
+          <button id="buildFromPhotos">由相片生成</button>
+          <button id="clearPhotos" class="ghost">清空相片</button>
+        </div>
       </div>
-      <div class="row">
-        <button id="useDemoVase">示範花瓶</button>
-        <button id="useDemoBox">示範箱</button>
-        <button id="useDemoBowl">示範碗</button>
+
+      <div class="dock-group dock-model">
+        <div class="slider-wrap">
+          <label><span>切面位置</span><span id="planeLabel">0.00</span></label>
+          <input id="planeSlider" type="range" min="-0.5" max="0.5" step="0.005" value="0" />
+        </div>
+        <div class="axis-pills">
+          <button id="axisX">X 切面</button>
+          <button id="axisY" class="on">Y 切面</button>
+          <button id="axisZ">Z 切面</button>
+        </div>
+        <div class="row">
+          <input id="heightMm" type="number" inputmode="decimal" value="280" placeholder="模型總高 mm" />
+          <button id="pickScale">兩點定標</button>
+        </div>
       </div>
-      <div class="row">
-        <button id="buildFromPhotos">由相片生成</button>
-        <button id="clearPhotos" class="ghost">清空相片</button>
-      </div>
-      <div class="slider-wrap">
-        <label><span>切面位置</span><span id="planeLabel">0.00</span></label>
-        <input id="planeSlider" type="range" min="-0.5" max="0.5" step="0.005" value="0" />
-      </div>
-      <div class="axis-pills">
-        <button id="axisX">X 切面</button>
-        <button id="axisY" class="on">Y 切面</button>
-        <button id="axisZ">Z 切面</button>
-      </div>
-      <div class="row">
-        <input id="heightMm" type="number" inputmode="decimal" value="280" placeholder="模型總高 mm" />
-        <button id="pickScale">兩點定標</button>
-      </div>
-      <div class="row">
-        <button id="exportSvg" class="primary">匯出截面 SVG</button>
-        <button id="clearMeasure" class="ghost">清除量度</button>
+
+      <div class="dock-group dock-section">
+        <div class="row">
+          <button id="exportSvg" class="primary">匯出截面 SVG</button>
+          <button id="clearMeasure" class="ghost">清除量度</button>
+        </div>
       </div>
     </footer>
   </div>
