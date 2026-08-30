@@ -6,12 +6,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#0b0d12" />
   <title>剖形 SectionScan</title>
-  <link rel="stylesheet" href="./css/app.css?v=5" />
+  <link rel="stylesheet" href="./css/app.css?v=6" />
   <script type="importmap">
   {
     "imports": {
-      "three": "https://unpkg.com/three@0.160.1/build/three.module.js",
-      "three/addons/": "https://unpkg.com/three@0.160.1/examples/jsm/"
+      "three": "./js/vendor/three.module.js"
     }
   }
   </script>
@@ -23,7 +22,7 @@
         <h1>剖形</h1>
         <span>掃描外形 · 看橫截面 · 量毫米</span>
       </div>
-      <div class="badge">v0.5 可碌</div>
+      <div class="badge">v0.6 上傳</div>
     </header>
 
     <nav class="tabs">
@@ -154,6 +153,7 @@
       </div>
     </footer>
   </div>
-  <script type="module" src="./js/app.js?v=5"></script>
+  <script src="./js/media.js?v=6"></script>
+  <script type="module" src="./js/app.js?v=6"></script>
 </body>
 </html>

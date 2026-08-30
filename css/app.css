@@ -234,13 +234,15 @@ input[type=number], input[type=text] {
   padding: 12px;
   min-height: 96px;
 }
-.thumbs img {
+.thumbs img,
+.thumbs video {
   width: 84px;
   height: 84px;
   object-fit: cover;
   border-radius: 10px;
   border: 1px solid var(--line);
   flex: 0 0 auto;
+  background: #000;
 }
 .thumbs:empty::after {
   content: "上傳後會在呢度見到縮圖";
