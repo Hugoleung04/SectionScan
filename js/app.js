@@ -1,11 +1,20 @@
-import { Viewer } from "./viewer.js";
-import { reconstructFromPhotos, getMeshyKey, setMeshyKey, pickStillImages } from "./recon.js?v=18";
+import { Viewer } from "./viewer.js?v=19";
+import { reconstructFromPhotos, getMeshyKey, setMeshyKey, pickStillImages } from "./recon.js?v=19";
 
 const $ = (id) => document.getElementById(id);
 let viewer = null;
 let building = false;
+
+function readShowPlane() {
+  try {
+    return localStorage.getItem("sectionscan.showPlane") !== "0";
+  } catch {
+    return true;
+  }
+}
+
 try {
-  viewer = new Viewer($("view3d"), $("view2d"));
+  viewer = new Viewer($("view3d"), $("view2d"), readShowPlane());
 } catch (err) {
   console.error(err);
   if (window.SectionScanMedia) window.SectionScanMedia.toast("3D 預覽載入失敗，但上傳功能仍可用");
@@ -188,11 +197,15 @@ function onPlaneSliderInput(e) {
   viewer.setPlane(v, true);
 }
 
+let planeCommitTimer = 0;
 function onPlaneSliderCommit(e) {
   const v = Number((e && e.target && e.target.value) || $("planeSlider").value);
   $("planeLabel").textContent = Number(v).toFixed(2);
-  viewer.setPlane(v, false);
-  updateMetrics();
+  clearTimeout(planeCommitTimer);
+  planeCommitTimer = setTimeout(() => {
+    viewer.setPlane(v, false);
+    updateMetrics();
+  }, 50);
 }
 
 function syncPlaneSlider() {
@@ -212,7 +225,6 @@ function syncPlaneSlider() {
   slider.replaceWith(next);
   next.addEventListener("input", onPlaneSliderInput);
   next.addEventListener("change", onPlaneSliderCommit);
-  next.addEventListener("pointerup", onPlaneSliderCommit);
   $("planeLabel").textContent = v.toFixed(2);
   viewer.setPlane(v);
 }
@@ -226,7 +238,6 @@ function setAxis(axis) {
 if ($("planeSlider")) {
   $("planeSlider").addEventListener("input", onPlaneSliderInput);
   $("planeSlider").addEventListener("change", onPlaneSliderCommit);
-  $("planeSlider").addEventListener("pointerup", onPlaneSliderCommit);
 }
 
 $("heightMm").addEventListener("change", () => {
@@ -327,6 +338,26 @@ $("modeShape").addEventListener("click", () => applyViewMode("shape"));
 $("modeShape2").addEventListener("click", () => applyViewMode("shape"));
 $("modeBelow").addEventListener("click", () => applyViewMode("below"));
 $("modeBelow2").addEventListener("click", () => applyViewMode("below"));
+
+function applyShowPlaneButton(on) {
+  const btn = $("togglePlane");
+  if (btn) btn.classList.toggle("on", on);
+}
+
+function setShowPlane(on) {
+  try {
+    localStorage.setItem("sectionscan.showPlane", on ? "1" : "0");
+  } catch (_) {}
+  if (viewer) viewer.setShowPlaneHelper(on);
+  applyShowPlaneButton(on);
+}
+
+applyShowPlaneButton(readShowPlane());
+if ($("togglePlane")) {
+  $("togglePlane").addEventListener("click", () => {
+    setShowPlane(!$("togglePlane").classList.contains("on"));
+  });
+}
 
 $("backToModel").addEventListener("click", () => {
   applyViewMode("full");

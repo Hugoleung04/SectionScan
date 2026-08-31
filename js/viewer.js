@@ -3,12 +3,13 @@ import { OrbitControls } from "./vendor/OrbitControls.js";
 import { planeFromAxis, intersectMesh, projectSegments, bounds2d, worldPositions, stitchLoops } from "./section.js";
 
 export class Viewer {
-  constructor(canvas3d, canvas2d) {
+  constructor(canvas3d, canvas2d, showPlaneHelper = true) {
     this.canvas3d = canvas3d;
     this.canvas2d = canvas2d;
     this.ctx = canvas2d.getContext("2d");
     this.axis = "y";
     this.planeValue = 0;
+    this.showPlaneHelper = showPlaneHelper !== false;
     this.mmPerUnit = 280; // default: demo vase height 1 unit -> 280mm after fit
     this.modelHeightUnits = 1;
     this.lines2d = [];
@@ -44,9 +45,16 @@ export class Viewer {
     this.scene.add(this.modelGroup);
     this.planeHelper = new THREE.Mesh(
       new THREE.PlaneGeometry(2.4, 2.4),
-      new THREE.MeshBasicMaterial({ color: 0x6ee0c4, transparent: true, opacity: 0.18, side: THREE.DoubleSide })
+      new THREE.MeshBasicMaterial({
+        color: 0x6ee0c4,
+        transparent: true,
+        opacity: 0.18,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      })
     );
     this.scene.add(this.planeHelper);
+    this.applyPlaneVisibility();
     this.sectionLines = new THREE.LineSegments(
       new THREE.BufferGeometry(),
       new THREE.LineBasicMaterial({ color: 0xffd36e })
@@ -284,6 +292,15 @@ export class Viewer {
     return all;
   }
 
+  applyPlaneVisibility() {
+    this.planeHelper.visible = this.showPlaneHelper && this.viewMode !== "shape";
+  }
+
+  setShowPlaneHelper(on) {
+    this.showPlaneHelper = !!on;
+    this.applyPlaneVisibility();
+  }
+
   updatePlaneHelper() {
     this.planeHelper.position.set(0, 0, 0);
     this.planeHelper.rotation.set(0, 0, 0);
@@ -297,18 +314,23 @@ export class Viewer {
       this.planeHelper.rotation.x = Math.PI / 2;
       this.planeHelper.position.y = this.planeValue;
     }
-    this.updateClipPlane();
   }
 
   setPlane(value, live) {
     this.planeValue = value;
     this.updatePlaneHelper();
-    if (live) return;
+    if (live) {
+      this.sectionLines.visible = false;
+      return;
+    }
+    this.sectionLines.visible = true;
+    this.updateClipPlane();
     this.updateSection();
   }
 
   updateSection() {
     this.updatePlaneHelper();
+    this.updateClipPlane();
     const plane = planeFromAxis(this.axis, this.planeValue);
     const positions = this.collectPositions();
     const segs = intersectMesh(positions, plane);
@@ -381,7 +403,7 @@ export class Viewer {
     const clipOn = mode === "below";
     this.modelGroup.visible = mode !== "shape";
     this.grid.visible = mode !== "shape";
-    this.planeHelper.visible = mode !== "shape";
+    this.applyPlaneVisibility();
     this.sectionLines.visible = true;
     this.updateClipPlane();
     this.modelGroup.traverse((o) => {

@@ -313,8 +313,8 @@ input[type=number], input[type=text], input[type=password] {
   display: none;
 }
 
-.axis-pills { display: flex; gap: 6px; }
-.axis-pills button { flex: 1; padding: 10px; }
+.axis-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.axis-pills button { flex: 1; padding: 10px; min-width: 0; }
 .axis-pills button.on { background: #2a3d62; }
 
 .section-list {
