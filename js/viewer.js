@@ -94,26 +94,53 @@ export class Viewer {
     this.modelGroup.updateMatrixWorld(true);
   }
 
+  vertexBox() {
+    this.modelGroup.updateMatrixWorld(true);
+    const pos = this.collectPositions();
+    const box = new THREE.Box3();
+    if (!pos.length) return box;
+    let minX = Infinity, minY = Infinity, minZ = Infinity;
+    let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+    for (let i = 0; i < pos.length; i += 3) {
+      const x = pos[i], y = pos[i + 1], z = pos[i + 2];
+      if (x < minX) minX = x;
+      if (y < minY) minY = y;
+      if (z < minZ) minZ = z;
+      if (x > maxX) maxX = x;
+      if (y > maxY) maxY = y;
+      if (z > maxZ) maxZ = z;
+    }
+    if (!Number.isFinite(minX)) return box;
+    box.min.set(minX, minY, minZ);
+    box.max.set(maxX, maxY, maxZ);
+    return box;
+  }
+
   fitAndScale() {
     this.modelGroup.position.set(0, 0, 0);
     this.modelGroup.rotation.set(0, 0, 0);
     this.modelGroup.scale.set(1, 1, 1);
     this.modelGroup.updateMatrixWorld(true);
-    const box = new THREE.Box3().setFromObject(this.modelGroup);
+    let box = this.vertexBox();
+    if (box.isEmpty()) box = new THREE.Box3().setFromObject(this.modelGroup);
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
     const maxDim = Math.max(size.x, size.y, size.z, 1e-6);
-    // Scale around the AABB centre. position.sub(center) then scale is wrong:
-    // Three applies T * R * S, so an unscaled offset plus scaled verts leaves
-    // a ground-sitting USDZ with world Y in e.g. [-1, 0] while the slider is [-0.5, 0.5].
     this.modelGroup.scale.setScalar(1 / maxDim);
     this.modelGroup.position.copy(center).multiplyScalar(-1 / maxDim);
     this.modelGroup.updateMatrixWorld(true);
-    this.modelHeightUnits = Math.max(size.y / maxDim, 1e-6);
-    this.modelBounds = new THREE.Box3().setFromObject(this.modelGroup);
-    this.camera.position.set(1.6, 1.1, 1.8);
-    this.controls.target.set(0, 0, 0);
-    this.planeValue = 0;
+    box = this.vertexBox();
+    if (!box.isEmpty()) {
+      this.modelGroup.position.y += -0.5 - box.min.y;
+      this.modelGroup.updateMatrixWorld(true);
+      box = this.vertexBox();
+    }
+    this.modelBounds = box.clone();
+    this.modelHeightUnits = Math.max(box.max.y - box.min.y, 1e-6);
+    const mid = box.getCenter(new THREE.Vector3());
+    this.camera.position.set(mid.x + 1.6, mid.y + 1.1, mid.z + 1.8);
+    this.controls.target.copy(mid);
+    this.planeValue = (box.min.y + box.max.y) / 2;
     this.updateSection();
   }
 

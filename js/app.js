@@ -1,5 +1,5 @@
 import { Viewer } from "./viewer.js";
-import { reconstructFromPhotos, getMeshyKey, setMeshyKey, pickStillImages } from "./recon.js?v=16";
+import { reconstructFromPhotos, getMeshyKey, setMeshyKey, pickStillImages } from "./recon.js?v=17";
 
 const $ = (id) => document.getElementById(id);
 let viewer = null;
@@ -182,19 +182,29 @@ $("axisX").addEventListener("click", () => setAxis("x"));
 $("axisY").addEventListener("click", () => setAxis("y"));
 $("axisZ").addEventListener("click", () => setAxis("z"));
 
+function onPlaneSliderInput(e) {
+  const v = Number(e.target.value);
+  $("planeLabel").textContent = v.toFixed(2);
+  viewer.setPlane(v);
+  updateMetrics();
+}
+
 function syncPlaneSlider() {
   const slider = $("planeSlider");
   if (!slider || !viewer) return;
   const axis = viewer.axis || "y";
   const range = viewer.planeRange ? viewer.planeRange(axis) : { min: -0.5, max: 0.5 };
-  slider.min = String(range.min);
-  slider.max = String(range.max);
   const span = range.max - range.min;
-  slider.step = String(Math.max(span / 200, 0.001));
   let v = Number(viewer.planeValue);
-  if (!Number.isFinite(v)) v = 0;
+  if (!Number.isFinite(v)) v = (range.min + range.max) / 2;
   v = Math.min(range.max, Math.max(range.min, v));
-  slider.value = String(v);
+  const next = slider.cloneNode(false);
+  next.min = String(range.min);
+  next.max = String(range.max);
+  next.step = String(Math.max(span / 200, 0.001));
+  next.value = String(v);
+  slider.replaceWith(next);
+  next.addEventListener("input", onPlaneSliderInput);
   $("planeLabel").textContent = v.toFixed(2);
   viewer.setPlane(v);
 }
@@ -205,12 +215,7 @@ function setAxis(axis) {
   syncPlaneSlider();
 }
 
-$("planeSlider").addEventListener("input", (e) => {
-  const v = Number(e.target.value);
-  $("planeLabel").textContent = v.toFixed(2);
-  viewer.setPlane(v);
-  updateMetrics();
-});
+if ($("planeSlider")) $("planeSlider").addEventListener("input", onPlaneSliderInput);
 
 $("heightMm").addEventListener("change", () => {
   viewer.setHeightMm($("heightMm").value);
