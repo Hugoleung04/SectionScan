@@ -7,7 +7,6 @@
 ## 現在就能做的事
 
 - 用 iPhone 拍攝或加入多張相片
-- 用 Meshy 雲端把 1–4 張不同角度相片建成 GLB
 - 載入示範模型（花瓶／箱／碗）練習切面
 - 匯入 GLB（Polycam、Scaniverse、RealityScan 匯出檔）或 USDZ（Abound／iOS；支援 binary USDC）
 - 移動 X / Y / Z 切面
@@ -16,17 +15,9 @@
 - 在截面上點兩點量距離
 - 匯出截面 SVG
 
-## 雲端建模（Meshy）
+## 如何得到 3D 模型
 
-GitHub Pages 是靜態網站，沒有自家後端。iPhone Safari 把相片直接交給 [Meshy](https://www.meshy.ai) Multi-Image to 3D，下載 GLB 後在本 App 切開截面。
-
-1. 到 [meshy.ai](https://www.meshy.ai) 註冊，在 Dashboard 複製 API key
-2. 用 Safari 打開本站，在「掃描」頁貼上並儲存 key（只留在這部手機的 localStorage，不會寫進原始碼）
-3. 加入 1–4 張不同角度相片（可點縮圖挑選；不選則自動取 4 張）
-4. 撳「用已上傳素材建模」，等候雲端完成
-5. 載入後請輸入真實高度或兩點定標（毫米）
-
-限制：這是 AI 重建，不是 20 張 photogrammetry；一次最多 4 視角；會消耗 Meshy 額度；相片會離開手機傳到 Meshy。要更高精度，請用 Polycam / Scaniverse 匯出 GLB 再匯入。
+用 Abound、Polycam 或 Scaniverse 掃描後，把 USDZ／GLB 匯入本站。網頁版不再提供雲端建模。
 
 ## 用 GitHub Pages 立刻在 iPhone 打開
 
@@ -61,7 +52,6 @@ python3 -m http.server 8080
 index.html              網頁 App 入口
 css/app.css
 js/app.js
-js/recon.js             Meshy 雲端建模（key 存在 localStorage）
 js/viewer.js
 js/section.js           切面求交演算法
 ios/SectionScan.xcodeproj  iOS 原生 App（Object Capture）
@@ -76,7 +66,7 @@ serve.sh
 - 要真實毫米必須先定標（輸入高度，或點兩點輸入已知距離）
 - 小物件加定標：常見數毫米誤差
 - 接近 2 米：常見 1–3 cm，取決於拍攝與定標
-- 雲端 Meshy 是 AI 重建（1–4 視角），不是傳統 photogrammetry；比例請自行定標。更高精度請匯入 Polycam / Scaniverse GLB，或用 iOS App（`ios/SectionScan.xcodeproj`）做 Object Capture
+- 更高精度請匯入 Polycam / Scaniverse / Abound 的 GLB 或 USDZ，或用 iOS App（`ios/SectionScan.xcodeproj`）做 Object Capture
 
 ## iOS App（Apple Object Capture）
 

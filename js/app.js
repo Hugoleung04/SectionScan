@@ -1,9 +1,7 @@
-import { Viewer } from "./viewer.js?v=19";
-import { reconstructFromPhotos, getMeshyKey, setMeshyKey, pickStillImages } from "./recon.js?v=19";
+import { Viewer } from "./viewer.js?v=20";
 
 const $ = (id) => document.getElementById(id);
 let viewer = null;
-let building = false;
 
 function readShowPlane() {
   try {
@@ -20,14 +18,6 @@ try {
   if (window.SectionScanMedia) window.SectionScanMedia.toast("3D 預覽載入失敗，但上傳功能仍可用");
 }
 if (viewer) syncPlaneSlider();
-function photos() {
-  return window.SectionScanMedia ? window.SectionScanMedia.getPhotos() : [];
-}
-function selectedPhotos() {
-  return window.SectionScanMedia && window.SectionScanMedia.getSelectedPhotos
-    ? window.SectionScanMedia.getSelectedPhotos()
-    : [];
-}
 
 function show(id) {
   document.querySelectorAll(".panel").forEach((p) => p.classList.remove("active"));
@@ -50,45 +40,6 @@ function toast(msg, ms) {
   clearTimeout(toast._t);
   toast._t = setTimeout(() => (el.style.display = "none"), ms || 2200);
 }
-
-function setReconNote(text, showNote) {
-  const el = $("reconNote");
-  if (!el) return;
-  el.textContent = text || "";
-  el.style.display = showNote === false || !text ? "none" : "block";
-}
-
-function refreshKeyStatus() {
-  const el = $("meshyKeyStatus");
-  if (!el) return;
-  if (getMeshyKey()) {
-    el.textContent = "已儲存 API key（只留在這部手機，不會上傳到本站）";
-    el.classList.add("ok");
-  } else {
-    el.textContent = "尚未儲存 API key";
-    el.classList.remove("ok");
-  }
-}
-
-if ($("saveMeshyKey")) {
-  $("saveMeshyKey").addEventListener("click", () => {
-    const input = $("meshyKeyInput");
-    const val = (input && input.value ? input.value : "").trim();
-    if (!val) {
-      toast("請貼上 Meshy API key");
-      return;
-    }
-    try {
-      setMeshyKey(val);
-      if (input) input.value = "";
-      refreshKeyStatus();
-      toast("已儲存 API key");
-    } catch (err) {
-      toast(err.message || "無法儲存 API key");
-    }
-  });
-}
-refreshKeyStatus();
 
 $("useDemoVase").addEventListener("click", () => {
   viewer.loadDemo("vase");
@@ -135,55 +86,6 @@ $("glbInput").addEventListener("change", async (e) => {
     if (msg.includes("這個 USDZ 沒有可顯示的網格")) toast(msg, 5000);
     else toast("匯入失敗，請用 GLB 或 USDZ");
     console.error(err);
-  }
-});
-
-$("buildFromPhotos").addEventListener("click", async () => {
-  if (building) return;
-  if (!viewer) {
-    toast("3D 預覽尚未載入");
-    return;
-  }
-  if (!getMeshyKey()) {
-    toast("請先儲存 Meshy API key");
-    show("panel-capture");
-    return;
-  }
-  const all = photos();
-  const selected = selectedPhotos();
-  const stills = pickStillImages(all, selected);
-  if (!stills.length) {
-    toast("請先加入最少 1 張靜態相片");
-    return;
-  }
-  const btn = $("buildFromPhotos");
-  const prevLabel = btn.textContent;
-  building = true;
-  btn.disabled = true;
-  btn.textContent = "建模中…";
-  setReconNote("正在準備 " + stills.length + " 張相片送去 Meshy…");
-  toast("開始雲端建模（最多 4 張）");
-  try {
-    const file = await reconstructFromPhotos({
-      files: all,
-      selected,
-      onProgress: (msg) => setReconNote(msg)
-    });
-    await viewer.loadGLB(file);
-    syncPlaneSlider();
-    $("heightMm").value = "1000";
-    show("panel-model");
-    setReconNote("雲端模型已載入。請輸入真實高度或用兩點定標。");
-    toast("已載入模型，請定標高度／毫米", 4000);
-  } catch (err) {
-    console.error(err);
-    const msg = (err && err.message) || "雲端建模失敗";
-    setReconNote(msg);
-    toast(msg, 4200);
-  } finally {
-    building = false;
-    btn.disabled = false;
-    btn.textContent = prevLabel;
   }
 });
 

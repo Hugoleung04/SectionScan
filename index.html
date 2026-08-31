@@ -6,7 +6,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#0b0d12" />
   <title>剖形 SectionScan</title>
-  <link rel="stylesheet" href="./css/app.css?v=19" />
+  <link rel="stylesheet" href="./css/app.css?v=20" />
   <script type="importmap">
   {
     "imports": {
@@ -22,7 +22,7 @@
         <h1>剖形</h1>
         <span>掃描外形 · 看橫截面 · 量毫米</span>
       </div>
-      <div class="badge">v1.6 順暢</div>
+      <div class="badge">v1.7</div>
     </header>
 
     <nav class="tabs">
@@ -36,23 +36,12 @@
       <section id="panel-capture" class="panel active">
         <div class="card">
           <h2>加入建模素材</h2>
-          <p>用下面系統掣一次揀多張相。揀完撳「加入」。可點縮圖挑選最多 4 張不同角度；不選則自動取 4 張。</p>
+          <p>用下面系統掣一次揀多張相。揀完撳「加入」。</p>
           <p class="pick-label">從相簿加入</p>
           <input id="libraryInput" class="bare-file" type="file" accept="image/*,video/*" multiple />
+          <p id="photoCount">尚未加入相片或影片</p>
         </div>
         <div class="thumbs" id="thumbs"></div>
-        <div class="card">
-          <h2>Meshy API key</h2>
-          <p>雲端用 Meshy，一次最多 4 張不同角度。這是 AI 重建，不是 20 張 photogrammetry，比例要自己定標。相片會傳到 Meshy。Polycam／Scaniverse 的 GLB，以及 Abound USDZ（含 binary USDC），仍可直接匯入。</p>
-          <p><a href="https://www.meshy.ai" target="_blank" rel="noopener">到 meshy.ai 註冊，在 Dashboard 複製 API key</a></p>
-          <div class="row key-row">
-            <input id="meshyKeyInput" type="password" autocomplete="off" placeholder="Meshy API key" />
-            <button type="button" id="saveMeshyKey">儲存</button>
-          </div>
-          <p id="meshyKeyStatus" class="key-status">尚未儲存 API key</p>
-          <p id="photoCount">尚未加入相片或影片</p>
-          <p id="reconNote" style="display:none;color:#ffb020"></p>
-        </div>
       </section>
 
       <section id="panel-model" class="panel panel-fill">
@@ -68,16 +57,16 @@
         <div class="card">
           <h2>這個版本做得到什麼</h2>
           <ol>
-            <li>用 iPhone 拍攝或加入 1–4 張不同角度相片。</li>
-            <li>用 Meshy 雲端 AI 建成 GLB，或匯入 Polycam／Scaniverse 的 GLB。Abound USDZ（含 binary USDC）可匯入。</li>
+            <li>用 iPhone 拍攝或從相簿加入相片／影片（可選）。</li>
+            <li>用 Abound／Polycam／Scaniverse 掃描後，匯入 USDZ／GLB。</li>
             <li>移動切面，看到真實尺寸的橫截面形狀。</li>
             <li>用物件高度或兩點距離定標到毫米。</li>
             <li>匯出截面 SVG，可進 CAD。</li>
           </ol>
         </div>
         <div class="card">
-          <h2>雲端建模（已上線）</h2>
-          <p>網頁版已接上 Meshy Multi-Image to 3D：一次 1–4 個視角，屬 AI 重建而非傳統 photogrammetry。載入後請自行定標毫米。相片會離開手機傳到 Meshy。要更高精度，請用 Polycam／Scaniverse 匯出 GLB 再匯入。Abound USDZ（含 binary USDC）可匯入。</p>
+          <h2>如何得到 3D 模型</h2>
+          <p>用 Abound、Polycam 或 Scaniverse 掃描後，把 USDZ／GLB 匯入本站。本站不再提供雲端建模。</p>
         </div>
         <div class="card">
           <h2>準確度</h2>
@@ -109,7 +98,6 @@
           <label class="file-btn">匯入 GLB／USDZ
             <input id="glbInput" type="file" accept=".glb,.gltf,.usdz,model/gltf-binary,model/vnd.usdz+zip" />
           </label>
-          <button type="button" id="buildFromPhotos" class="primary">用已上傳素材建模</button>
         </div>
         <div class="row">
           <button id="useDemoVase">示範花瓶</button>
@@ -162,7 +150,7 @@
       </div>
     </footer>
   </div>
-  <script src="./js/media.js?v=19"></script>
-  <script type="module" src="./js/app.js?v=19"></script>
+  <script src="./js/media.js?v=20"></script>
+  <script type="module" src="./js/app.js?v=20"></script>
 </body>
 </html>
