@@ -9,7 +9,7 @@
 - 用 iPhone 拍攝或加入多張相片
 - 用 Meshy 雲端把 1–4 張不同角度相片建成 GLB
 - 載入示範模型（花瓶／箱／碗）練習切面
-- 匯入 GLB（Polycam、Scaniverse、RealityScan 匯出檔）
+- 匯入 GLB（Polycam、Scaniverse、RealityScan 匯出檔）或 USDZ（Abound 免費版匯出）
 - 移動 X / Y / Z 切面
 - 看 2D 截面輪廓與寬高（mm）
 - 用模型總高或兩點距離定標

@@ -148,6 +148,43 @@ export class Viewer {
     this.mmPerUnit = 1000;
   }
 
+  async loadUSDZ(file) {
+    const { USDZLoader } = await import("./vendor/USDZLoader.js");
+    const url = URL.createObjectURL(file);
+    const result = await new USDZLoader().loadAsync(url);
+    URL.revokeObjectURL(url);
+    const scene = result && result.scene ? result.scene : result;
+    this.clearModel();
+    this.modelGroup.add(scene);
+    this.enableClippingOnMaterials();
+    this.fitAndScale();
+    this.mmPerUnit = 1000;
+  }
+
+  async loadModel(file) {
+    const name = (file.name || "").toLowerCase();
+    const type = (file.type || "").toLowerCase();
+    const isGlb =
+      name.endsWith(".glb") ||
+      name.endsWith(".gltf") ||
+      type === "model/gltf-binary" ||
+      type === "model/gltf+json";
+    const isUsdz =
+      name.endsWith(".usdz") ||
+      type === "model/vnd.usdz+zip" ||
+      type === "application/zip+usdz";
+    if (isGlb) return this.loadGLB(file);
+    if (isUsdz) return this.loadUSDZ(file);
+    const hasExt = /\.[^./\\]+$/.test(name);
+    if (!hasExt) {
+      const header = new Uint8Array(await file.slice(0, 2).arrayBuffer());
+      const isZip = header.length >= 2 && header[0] === 0x50 && header[1] === 0x4b;
+      if (isZip) return this.loadUSDZ(file);
+      return this.loadGLB(file);
+    }
+    throw new Error("unsupported model type");
+  }
+
   setAxis(axis) {
     this.axis = axis;
     this.updateSection();

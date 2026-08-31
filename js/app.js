@@ -1,5 +1,5 @@
 import { Viewer } from "./viewer.js";
-import { reconstructFromPhotos, getMeshyKey, setMeshyKey, pickStillImages } from "./recon.js?v=13";
+import { reconstructFromPhotos, getMeshyKey, setMeshyKey, pickStillImages } from "./recon.js?v=14";
 
 const $ = (id) => document.getElementById(id);
 let viewer = null;
@@ -105,12 +105,12 @@ $("glbInput").addEventListener("change", async (e) => {
   const file = e.target.files?.[0];
   if (!file) return;
   try {
-    await viewer.loadGLB(file);
+    await viewer.loadModel(file);
     $("heightMm").value = "1000";
     show("panel-model");
-    toast("已匯入 GLB，請先定標真實高度");
+    toast("已匯入 USDZ／GLB，請先定標真實高度");
   } catch (err) {
-    toast("匯入失敗，請用 GLB 檔");
+    toast("匯入失敗，請用 GLB 或 USDZ");
     console.error(err);
   }
 });
