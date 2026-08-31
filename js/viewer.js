@@ -92,9 +92,11 @@ export class Viewer {
     this.modelGroup.rotation.set(0, 0, 0);
     this.modelGroup.scale.set(1, 1, 1);
     this.modelGroup.updateMatrixWorld(true);
+    this.cachedPositions = null;
   }
 
   vertexBox() {
+    this.cachedPositions = null;
     this.modelGroup.updateMatrixWorld(true);
     const pos = this.collectPositions();
     const box = new THREE.Box3();
@@ -117,6 +119,7 @@ export class Viewer {
   }
 
   fitAndScale() {
+    this.cachedPositions = null;
     this.modelGroup.position.set(0, 0, 0);
     this.modelGroup.rotation.set(0, 0, 0);
     this.modelGroup.scale.set(1, 1, 1);
@@ -141,6 +144,7 @@ export class Viewer {
     this.camera.position.set(mid.x + 1.6, mid.y + 1.1, mid.z + 1.8);
     this.controls.target.copy(mid);
     this.planeValue = (box.min.y + box.max.y) / 2;
+    this.rebuildPositionCache();
     this.updateSection();
   }
 
@@ -250,17 +254,18 @@ export class Viewer {
     this.updateSection();
   }
 
-  setPlane(value) {
-    this.planeValue = value;
-    this.updateSection();
-  }
-
   setHeightMm(mm) {
     const n = Number(mm);
     if (n > 0) this.mmPerUnit = n / this.modelHeightUnits;
   }
 
   collectPositions() {
+    if (this.cachedPositions) return this.cachedPositions;
+    return this.rebuildPositionCache();
+  }
+
+  rebuildPositionCache() {
+    this.modelGroup.updateMatrixWorld(true);
     const chunks = [];
     this.modelGroup.traverse((o) => {
       if (o.isMesh && o.geometry?.attributes?.position) {
@@ -275,11 +280,11 @@ export class Viewer {
       all.set(c, offset);
       offset += c.length;
     });
+    this.cachedPositions = all;
     return all;
   }
 
-  updateSection() {
-    const plane = planeFromAxis(this.axis, this.planeValue);
+  updatePlaneHelper() {
     this.planeHelper.position.set(0, 0, 0);
     this.planeHelper.rotation.set(0, 0, 0);
     if (this.axis === "x") {
@@ -292,7 +297,19 @@ export class Viewer {
       this.planeHelper.rotation.x = Math.PI / 2;
       this.planeHelper.position.y = this.planeValue;
     }
+    this.updateClipPlane();
+  }
 
+  setPlane(value, live) {
+    this.planeValue = value;
+    this.updatePlaneHelper();
+    if (live) return;
+    this.updateSection();
+  }
+
+  updateSection() {
+    this.updatePlaneHelper();
+    const plane = planeFromAxis(this.axis, this.planeValue);
     const positions = this.collectPositions();
     const segs = intersectMesh(positions, plane);
     const arr = new Float32Array(segs.length * 6);
@@ -307,7 +324,6 @@ export class Viewer {
     const stitched = stitchLoops(this.lines2d);
     this.loops2d = stitched.loops;
     this.open2d = stitched.open;
-    this.updateClipPlane();
     this.draw2d();
   }
 

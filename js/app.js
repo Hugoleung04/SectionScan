@@ -1,5 +1,5 @@
 import { Viewer } from "./viewer.js";
-import { reconstructFromPhotos, getMeshyKey, setMeshyKey, pickStillImages } from "./recon.js?v=17";
+import { reconstructFromPhotos, getMeshyKey, setMeshyKey, pickStillImages } from "./recon.js?v=18";
 
 const $ = (id) => document.getElementById(id);
 let viewer = null;
@@ -185,7 +185,13 @@ $("axisZ").addEventListener("click", () => setAxis("z"));
 function onPlaneSliderInput(e) {
   const v = Number(e.target.value);
   $("planeLabel").textContent = v.toFixed(2);
-  viewer.setPlane(v);
+  viewer.setPlane(v, true);
+}
+
+function onPlaneSliderCommit(e) {
+  const v = Number((e && e.target && e.target.value) || $("planeSlider").value);
+  $("planeLabel").textContent = Number(v).toFixed(2);
+  viewer.setPlane(v, false);
   updateMetrics();
 }
 
@@ -205,6 +211,8 @@ function syncPlaneSlider() {
   next.value = String(v);
   slider.replaceWith(next);
   next.addEventListener("input", onPlaneSliderInput);
+  next.addEventListener("change", onPlaneSliderCommit);
+  next.addEventListener("pointerup", onPlaneSliderCommit);
   $("planeLabel").textContent = v.toFixed(2);
   viewer.setPlane(v);
 }
@@ -215,7 +223,11 @@ function setAxis(axis) {
   syncPlaneSlider();
 }
 
-if ($("planeSlider")) $("planeSlider").addEventListener("input", onPlaneSliderInput);
+if ($("planeSlider")) {
+  $("planeSlider").addEventListener("input", onPlaneSliderInput);
+  $("planeSlider").addEventListener("change", onPlaneSliderCommit);
+  $("planeSlider").addEventListener("pointerup", onPlaneSliderCommit);
+}
 
 $("heightMm").addEventListener("change", () => {
   viewer.setHeightMm($("heightMm").value);
