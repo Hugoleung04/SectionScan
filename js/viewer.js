@@ -149,13 +149,23 @@ export class Viewer {
   }
 
   async loadUSDZ(file) {
-    const { USDZLoader } = await import("./vendor/USDZLoader.js");
+    const { USDLoader } = await import("./vendor/USDLoader.js");
     const url = URL.createObjectURL(file);
-    const result = await new USDZLoader().loadAsync(url);
-    URL.revokeObjectURL(url);
-    const scene = result && result.scene ? result.scene : result;
+    let group;
+    try {
+      group = await new USDLoader().loadAsync(url);
+    } finally {
+      URL.revokeObjectURL(url);
+    }
     this.clearModel();
-    this.modelGroup.add(scene);
+    this.modelGroup.add(group);
+    let meshCount = 0;
+    group.traverse((o) => {
+      if (o.isMesh && o.geometry) meshCount++;
+    });
+    if (meshCount === 0) {
+      throw new Error("這個 USDZ 沒有可顯示的網格（瀏覽器未能解出 mesh）。請改匯出 GLB，或用 Polycam／Scaniverse。");
+    }
     this.enableClippingOnMaterials();
     this.fitAndScale();
     this.mmPerUnit = 1000;

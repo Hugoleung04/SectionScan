@@ -1,5 +1,5 @@
 import { Viewer } from "./viewer.js";
-import { reconstructFromPhotos, getMeshyKey, setMeshyKey, pickStillImages } from "./recon.js?v=14";
+import { reconstructFromPhotos, getMeshyKey, setMeshyKey, pickStillImages } from "./recon.js?v=15";
 
 const $ = (id) => document.getElementById(id);
 let viewer = null;
@@ -105,12 +105,21 @@ $("glbInput").addEventListener("change", async (e) => {
   const file = e.target.files?.[0];
   if (!file) return;
   try {
+    const name = (file.name || "").toLowerCase();
+    const type = (file.type || "").toLowerCase();
+    const isUsdz =
+      name.endsWith(".usdz") ||
+      type === "model/vnd.usdz+zip" ||
+      type === "application/zip+usdz";
+    if (isUsdz) toast("正在載入 USDZ…", 8000);
     await viewer.loadModel(file);
     $("heightMm").value = "1000";
     show("panel-model");
     toast("已匯入 USDZ／GLB，請先定標真實高度");
   } catch (err) {
-    toast("匯入失敗，請用 GLB 或 USDZ");
+    const msg = (err && err.message) || "";
+    if (msg.includes("這個 USDZ 沒有可顯示的網格")) toast(msg, 5000);
+    else toast("匯入失敗，請用 GLB 或 USDZ");
     console.error(err);
   }
 });
