@@ -88,20 +88,43 @@ export class Viewer {
         }
       });
     }
+    this.modelGroup.position.set(0, 0, 0);
+    this.modelGroup.rotation.set(0, 0, 0);
+    this.modelGroup.scale.set(1, 1, 1);
+    this.modelGroup.updateMatrixWorld(true);
   }
 
   fitAndScale() {
+    this.modelGroup.position.set(0, 0, 0);
+    this.modelGroup.rotation.set(0, 0, 0);
+    this.modelGroup.scale.set(1, 1, 1);
+    this.modelGroup.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(this.modelGroup);
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
-    this.modelGroup.position.sub(center);
     const maxDim = Math.max(size.x, size.y, size.z, 1e-6);
+    // Scale around the AABB centre. position.sub(center) then scale is wrong:
+    // Three applies T * R * S, so an unscaled offset plus scaled verts leaves
+    // a ground-sitting USDZ with world Y in e.g. [-1, 0] while the slider is [-0.5, 0.5].
     this.modelGroup.scale.setScalar(1 / maxDim);
-    this.modelHeightUnits = 1;
+    this.modelGroup.position.copy(center).multiplyScalar(-1 / maxDim);
     this.modelGroup.updateMatrixWorld(true);
+    this.modelHeightUnits = Math.max(size.y / maxDim, 1e-6);
+    this.modelBounds = new THREE.Box3().setFromObject(this.modelGroup);
     this.camera.position.set(1.6, 1.1, 1.8);
     this.controls.target.set(0, 0, 0);
+    this.planeValue = 0;
     this.updateSection();
+  }
+
+  planeRange(axis) {
+    const b = this.modelBounds;
+    if (!b || b.isEmpty()) return { min: -0.5, max: 0.5 };
+    const min = axis === "x" ? b.min.x : axis === "z" ? b.min.z : b.min.y;
+    const max = axis === "x" ? b.max.x : axis === "z" ? b.max.z : b.max.y;
+    const span = max - min;
+    const pad = span > 1e-6 ? span * 0.02 : 0.01;
+    return { min: min - pad, max: max + pad };
   }
 
   loadDemo(kind) {

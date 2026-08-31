@@ -1,5 +1,5 @@
 import { Viewer } from "./viewer.js";
-import { reconstructFromPhotos, getMeshyKey, setMeshyKey, pickStillImages } from "./recon.js?v=15";
+import { reconstructFromPhotos, getMeshyKey, setMeshyKey, pickStillImages } from "./recon.js?v=16";
 
 const $ = (id) => document.getElementById(id);
 let viewer = null;
@@ -10,6 +10,7 @@ try {
   console.error(err);
   if (window.SectionScanMedia) window.SectionScanMedia.toast("3D 預覽載入失敗，但上傳功能仍可用");
 }
+if (viewer) syncPlaneSlider();
 function photos() {
   return window.SectionScanMedia ? window.SectionScanMedia.getPhotos() : [];
 }
@@ -82,12 +83,14 @@ refreshKeyStatus();
 
 $("useDemoVase").addEventListener("click", () => {
   viewer.loadDemo("vase");
+  syncPlaneSlider();
   $("heightMm").value = "280";
   show("panel-model");
   toast("已載入示範花瓶（高 280 mm）");
 });
 $("useDemoBox").addEventListener("click", () => {
   viewer.loadDemo("box");
+  syncPlaneSlider();
   $("heightMm").value = "400";
   show("panel-model");
   toast("已載入示範箱體（高 400 mm）");
@@ -95,6 +98,7 @@ $("useDemoBox").addEventListener("click", () => {
 if ($("useDemoBowl")) {
   $("useDemoBowl").addEventListener("click", () => {
     viewer.loadDemo("bowl");
+    syncPlaneSlider();
     $("heightMm").value = "220";
     show("panel-model");
     toast("已載入示範碗（高 220 mm）");
@@ -113,6 +117,7 @@ $("glbInput").addEventListener("change", async (e) => {
       type === "application/zip+usdz";
     if (isUsdz) toast("正在載入 USDZ…", 8000);
     await viewer.loadModel(file);
+    syncPlaneSlider();
     $("heightMm").value = "1000";
     show("panel-model");
     toast("已匯入 USDZ／GLB，請先定標真實高度");
@@ -156,6 +161,7 @@ $("buildFromPhotos").addEventListener("click", async () => {
       onProgress: (msg) => setReconNote(msg)
     });
     await viewer.loadGLB(file);
+    syncPlaneSlider();
     $("heightMm").value = "1000";
     show("panel-model");
     setReconNote("雲端模型已載入。請輸入真實高度或用兩點定標。");
@@ -176,9 +182,27 @@ $("axisX").addEventListener("click", () => setAxis("x"));
 $("axisY").addEventListener("click", () => setAxis("y"));
 $("axisZ").addEventListener("click", () => setAxis("z"));
 
+function syncPlaneSlider() {
+  const slider = $("planeSlider");
+  if (!slider || !viewer) return;
+  const axis = viewer.axis || "y";
+  const range = viewer.planeRange ? viewer.planeRange(axis) : { min: -0.5, max: 0.5 };
+  slider.min = String(range.min);
+  slider.max = String(range.max);
+  const span = range.max - range.min;
+  slider.step = String(Math.max(span / 200, 0.001));
+  let v = Number(viewer.planeValue);
+  if (!Number.isFinite(v)) v = 0;
+  v = Math.min(range.max, Math.max(range.min, v));
+  slider.value = String(v);
+  $("planeLabel").textContent = v.toFixed(2);
+  viewer.setPlane(v);
+}
+
 function setAxis(axis) {
   ["x", "y", "z"].forEach((a) => $(`axis${a.toUpperCase()}`).classList.toggle("on", a === axis));
   viewer.setAxis(axis);
+  syncPlaneSlider();
 }
 
 $("planeSlider").addEventListener("input", (e) => {
