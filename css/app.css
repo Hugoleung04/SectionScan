@@ -138,6 +138,7 @@ html, body {
   height: 100%;
   display: block;
 }
+#view2d { touch-action: none; }
 
 .app.mode-section .hint {
   top: auto;

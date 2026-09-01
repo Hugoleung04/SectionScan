@@ -17,6 +17,11 @@ export class Viewer {
     this.loops2d = [];
     this.open2d = [];
     this.measure = [];
+    this.view2dZoom = 1;
+    this.view2dPanX = 0;
+    this.view2dPanY = 0;
+    this._2dPointers = new Map();
+    this._2dMode = null;
     this.pickScale = false;
     this.scalePts = [];
     this.savedSections = [];
@@ -73,7 +78,12 @@ export class Viewer {
     addEventListener("resize", () => this.resize());
     canvas3d.addEventListener("pointerdown", (e) => this.on3dPointerDown(e));
     canvas3d.addEventListener("pointerup", (e) => this.on3dPointerUp(e));
-    canvas2d.addEventListener("pointerdown", (e) => this.on2dPointer(e));
+    canvas2d.style.touchAction = "none";
+    canvas2d.addEventListener("pointerdown", (e) => this.on2dPointerDown(e));
+    canvas2d.addEventListener("pointermove", (e) => this.on2dPointerMove(e));
+    canvas2d.addEventListener("pointerup", (e) => this.on2dPointerUp(e));
+    canvas2d.addEventListener("pointercancel", (e) => this.on2dPointerUp(e));
+    canvas2d.addEventListener("wheel", (e) => this.on2dWheel(e), { passive: false });
     this.loop();
   }
 
@@ -382,6 +392,7 @@ export class Viewer {
     const stitched = stitchLoops(this.lines2d);
     this.loops2d = stitched.loops;
     this.open2d = stitched.open;
+    this.resetView2d();
     this.draw2d();
   }
 
@@ -462,6 +473,53 @@ export class Viewer {
     return units * this.mmPerUnit;
   }
 
+  resetView2d() {
+    this.view2dZoom = 1;
+    this.view2dPanX = 0;
+    this.view2dPanY = 0;
+  }
+
+  layout2d() {
+    const w = this.canvas2d.width;
+    const h = this.canvas2d.height;
+    if (!this.lines2d.length) return null;
+    const b = bounds2d(this.lines2d);
+    const pad = 28 * devicePixelRatio;
+    const sFit = Math.min(
+      (w - pad * 2) / Math.max(b.w, 1e-6),
+      (h - pad * 2) / Math.max(b.h, 1e-6)
+    );
+    return {
+      w,
+      h,
+      b,
+      pad,
+      sFit,
+      oxFit: (s) => pad + (w - pad * 2 - b.w * s) / 2,
+      oyFit: (s) => pad + (h - pad * 2 - b.h * s) / 2
+    };
+  }
+
+  setZoomAtClient(clientX, clientY, newZoom) {
+    const layout = this.layout2d();
+    newZoom = Math.min(16, Math.max(0.4, newZoom));
+    if (!layout) {
+      this.view2dZoom = newZoom;
+      return;
+    }
+    const rect = this.canvas2d.getBoundingClientRect();
+    const dpr = devicePixelRatio;
+    const mx = (clientX - rect.left) * dpr;
+    const my = (clientY - rect.top) * dpr;
+    const s0 = Math.max(layout.sFit * this.view2dZoom, 1e-6);
+    const s1 = layout.sFit * newZoom;
+    const ox0 = layout.oxFit(s0) + this.view2dPanX;
+    const oy0 = layout.oyFit(s0) + this.view2dPanY;
+    this.view2dZoom = newZoom;
+    this.view2dPanX = mx - layout.oxFit(s1) - (s1 / s0) * (mx - ox0);
+    this.view2dPanY = my - layout.oyFit(s1) - (s1 / s0) * (my - oy0);
+  }
+
   draw2d() {
     const ctx = this.ctx;
     const w = this.canvas2d.width;
@@ -475,18 +533,15 @@ export class Viewer {
       ctx.fillText("此位置沒有截面。移動切面再試。", 24, 40);
       return;
     }
-    const b = bounds2d(this.lines2d);
-    const pad = 28 * devicePixelRatio;
-    const sx = (w - pad * 2) / b.w;
-    const sy = (h - pad * 2) / b.h;
-    const s = Math.min(sx, sy);
-    const ox = pad + (w - pad * 2 - b.w * s) / 2;
-    const oy = pad + (h - pad * 2 - b.h * s) / 2;
+    const layout = this.layout2d();
+    const b = layout.b;
+    const s = layout.sFit * this.view2dZoom;
+    const ox = layout.oxFit(s) + this.view2dPanX;
+    const oy = layout.oyFit(s) + this.view2dPanY;
     this._map2d = { b, s, ox, oy };
 
     const mapX = (x) => ox + (x - b.minX) * s;
     const mapY = (y) => oy + (b.maxY - y) * s;
-    this._map2d = { b, s, ox, oy };
 
     ctx.fillStyle = this.shapeOnly ? "rgba(110,224,196,0.28)" : "rgba(110,224,196,0.16)";
     ctx.strokeStyle = "#6ee0c4";
@@ -520,38 +575,125 @@ export class Viewer {
     ctx.fillStyle = "#f3f5f8";
     ctx.font = `${13 * devicePixelRatio}px sans-serif`;
     ctx.fillText(`截面寬 ${widthMm.toFixed(1)} mm   高 ${heightMm.toFixed(1)} mm`, 20 * devicePixelRatio, 24 * devicePixelRatio);
+    ctx.fillStyle = "#9aa6b8";
+    ctx.font = `${11 * devicePixelRatio}px sans-serif`;
+    ctx.fillText("拖曳移動 · 雙指放大縮小 · 輕點量距離", 20 * devicePixelRatio, 42 * devicePixelRatio);
 
     if (this.measure.length) {
       ctx.fillStyle = "#ffd36e";
-      this.measure.forEach((p) => {
+      const pts = this.measure.map((p) => ({ x: mapX(p.ux), y: mapY(p.uy), ux: p.ux, uy: p.uy }));
+      pts.forEach((p) => {
         ctx.beginPath();
         ctx.arc(p.x, p.y, 5 * devicePixelRatio, 0, Math.PI * 2);
         ctx.fill();
       });
-      if (this.measure.length === 2) {
+      if (pts.length === 2) {
         ctx.strokeStyle = "#ffd36e";
         ctx.beginPath();
-        ctx.moveTo(this.measure[0].x, this.measure[0].y);
-        ctx.lineTo(this.measure[1].x, this.measure[1].y);
+        ctx.moveTo(pts[0].x, pts[0].y);
+        ctx.lineTo(pts[1].x, pts[1].y);
         ctx.stroke();
-        const du = (this.measure[1].ux - this.measure[0].ux);
-        const dv = (this.measure[1].uy - this.measure[0].uy);
-        const mm = this.toMm(Math.hypot(du, dv));
-        ctx.fillText(`${mm.toFixed(1)} mm`, (this.measure[0].x + this.measure[1].x) / 2, (this.measure[0].y + this.measure[1].y) / 2 - 8);
+        const mm = this.toMm(Math.hypot(pts[1].ux - pts[0].ux, pts[1].uy - pts[0].uy));
+        ctx.fillText(`${mm.toFixed(1)} mm`, (pts[0].x + pts[1].x) / 2, (pts[0].y + pts[1].y) / 2 - 8 * devicePixelRatio);
       }
     }
   }
 
-  on2dPointer(e) {
-    if (!this._map2d || !this.lines2d.length) return;
+  clientTo2d(e) {
     const rect = this.canvas2d.getBoundingClientRect();
     const x = (e.clientX - rect.left) * devicePixelRatio;
     const y = (e.clientY - rect.top) * devicePixelRatio;
     const { b, s, ox, oy } = this._map2d;
-    const ux = b.minX + (x - ox) / s;
-    const uy = b.maxY - (y - oy) / s;
-    this.measure.push({ x, y, ux, uy });
+    return {
+      x,
+      y,
+      ux: b.minX + (x - ox) / s,
+      uy: b.maxY - (y - oy) / s
+    };
+  }
+
+  addMeasureAt(e) {
+    if (!this._map2d || !this.lines2d.length) return;
+    const p = this.clientTo2d(e);
+    this.measure.push({ ux: p.ux, uy: p.uy });
     if (this.measure.length > 2) this.measure = this.measure.slice(-1);
+    this.draw2d();
+  }
+
+  on2dPointerDown(e) {
+    if (!this.lines2d.length) return;
+    e.preventDefault();
+    try { this.canvas2d.setPointerCapture(e.pointerId); } catch (_) {}
+    this._2dPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (this._2dPointers.size === 1) {
+      this._2dMode = "maybe";
+      this._2dStart = {
+        x: e.clientX,
+        y: e.clientY,
+        panX: this.view2dPanX,
+        panY: this.view2dPanY
+      };
+    } else if (this._2dPointers.size >= 2) {
+      this._2dMode = "pinch";
+      const pts = [...this._2dPointers.values()];
+      this._2dPinch = {
+        dist: Math.max(Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y), 1),
+        zoom: this.view2dZoom,
+        mx: (pts[0].x + pts[1].x) / 2,
+        my: (pts[0].y + pts[1].y) / 2
+      };
+    }
+  }
+
+  on2dPointerMove(e) {
+    if (!this._2dPointers.has(e.pointerId)) return;
+    this._2dPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (this._2dMode === "pinch" && this._2dPointers.size >= 2) {
+      const pts = [...this._2dPointers.values()];
+      const dist = Math.max(Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y), 1);
+      const midX = (pts[0].x + pts[1].x) / 2;
+      const midY = (pts[0].y + pts[1].y) / 2;
+      this.setZoomAtClient(midX, midY, this._2dPinch.zoom * (dist / this._2dPinch.dist));
+      this.draw2d();
+      return;
+    }
+    if (this._2dMode === "maybe" || this._2dMode === "pan") {
+      const dx = e.clientX - this._2dStart.x;
+      const dy = e.clientY - this._2dStart.y;
+      if (this._2dMode === "maybe" && dx * dx + dy * dy > 36) this._2dMode = "pan";
+      if (this._2dMode === "pan") {
+        this.view2dPanX = this._2dStart.panX + dx * devicePixelRatio;
+        this.view2dPanY = this._2dStart.panY + dy * devicePixelRatio;
+        this.draw2d();
+      }
+    }
+  }
+
+  on2dPointerUp(e) {
+    if (!this._2dPointers.has(e.pointerId)) return;
+    const was = this._2dMode;
+    this._2dPointers.delete(e.pointerId);
+    if (was === "maybe") this.addMeasureAt(e);
+    if (this._2dPointers.size >= 2) this._2dMode = "pinch";
+    else if (this._2dPointers.size === 1) {
+      const left = [...this._2dPointers.values()][0];
+      this._2dMode = "pan";
+      this._2dStart = {
+        x: left.x,
+        y: left.y,
+        panX: this.view2dPanX,
+        panY: this.view2dPanY
+      };
+    } else {
+      this._2dMode = null;
+    }
+  }
+
+  on2dWheel(e) {
+    if (!this.lines2d.length) return;
+    e.preventDefault();
+    const factor = e.deltaY > 0 ? 0.9 : 1.11;
+    this.setZoomAtClient(e.clientX, e.clientY, this.view2dZoom * factor);
     this.draw2d();
   }
 
