@@ -1,4 +1,4 @@
-import { Viewer } from "./viewer.js?v=20";
+import { Viewer } from "./viewer.js?v=21";
 
 const $ = (id) => document.getElementById(id);
 let viewer = null;
@@ -11,8 +11,16 @@ function readShowPlane() {
   }
 }
 
+function readShowGrid() {
+  try {
+    return localStorage.getItem("sectionscan.showGrid") === "1";
+  } catch {
+    return false;
+  }
+}
+
 try {
-  viewer = new Viewer($("view3d"), $("view2d"), readShowPlane());
+  viewer = new Viewer($("view3d"), $("view2d"), readShowPlane(), readShowGrid());
 } catch (err) {
   console.error(err);
   if (window.SectionScanMedia) window.SectionScanMedia.toast("3D 預覽載入失敗，但上傳功能仍可用");
@@ -258,6 +266,26 @@ applyShowPlaneButton(readShowPlane());
 if ($("togglePlane")) {
   $("togglePlane").addEventListener("click", () => {
     setShowPlane(!$("togglePlane").classList.contains("on"));
+  });
+}
+
+function applyShowGridButton(on) {
+  const btn = $("toggleGrid");
+  if (btn) btn.classList.toggle("on", on);
+}
+
+function setShowGrid(on) {
+  try {
+    localStorage.setItem("sectionscan.showGrid", on ? "1" : "0");
+  } catch (_) {}
+  if (viewer) viewer.setShowGrid(on);
+  applyShowGridButton(on);
+}
+
+applyShowGridButton(readShowGrid());
+if ($("toggleGrid")) {
+  $("toggleGrid").addEventListener("click", () => {
+    setShowGrid(!$("toggleGrid").classList.contains("on"));
   });
 }
 

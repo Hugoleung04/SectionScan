@@ -3,13 +3,14 @@ import { OrbitControls } from "./vendor/OrbitControls.js";
 import { planeFromAxis, intersectMesh, projectSegments, bounds2d, worldPositions, stitchLoops } from "./section.js";
 
 export class Viewer {
-  constructor(canvas3d, canvas2d, showPlaneHelper = true) {
+  constructor(canvas3d, canvas2d, showPlaneHelper = true, showGrid = false) {
     this.canvas3d = canvas3d;
     this.canvas2d = canvas2d;
     this.ctx = canvas2d.getContext("2d");
     this.axis = "y";
     this.planeValue = 0;
     this.showPlaneHelper = showPlaneHelper !== false;
+    this.showGrid = showGrid === true;
     this.mmPerUnit = 280; // default: demo vase height 1 unit -> 280mm after fit
     this.modelHeightUnits = 1;
     this.lines2d = [];
@@ -40,6 +41,7 @@ export class Viewer {
     this.scene.add(dir);
     this.grid = new THREE.GridHelper(3, 12, 0x2a3344, 0x222a38);
     this.scene.add(this.grid);
+    this.grid.visible = this.showGrid;
 
     this.modelGroup = new THREE.Group();
     this.scene.add(this.modelGroup);
@@ -148,12 +150,34 @@ export class Viewer {
     }
     this.modelBounds = box.clone();
     this.modelHeightUnits = Math.max(box.max.y - box.min.y, 1e-6);
-    const mid = box.getCenter(new THREE.Vector3());
-    this.camera.position.set(mid.x + 1.6, mid.y + 1.1, mid.z + 1.8);
-    this.controls.target.copy(mid);
+    this.layoutGround(box);
+    this.frameCamera(box);
     this.planeValue = (box.min.y + box.max.y) / 2;
     this.rebuildPositionCache();
     this.updateSection();
+  }
+
+  layoutGround(box) {
+    const mid = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    const xz = Math.max(size.x, size.z, 0.35) * 2.4;
+    this.grid.scale.setScalar(xz / 3);
+    this.grid.position.set(mid.x, box.min.y, mid.z);
+    this.applyGridVisibility();
+  }
+
+  frameCamera(box) {
+    const mid = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    const radius = Math.max(size.x, size.y, size.z) * 0.55;
+    const fov = THREE.MathUtils.degToRad(this.camera.fov);
+    const dist = (radius / Math.sin(fov * 0.5)) * 1.08;
+    const dir = new THREE.Vector3(0.9, 0.55, 1.05).normalize();
+    this.camera.position.copy(mid).addScaledVector(dir, dist);
+    this.controls.target.copy(mid);
+    this.controls.minDistance = dist * 0.25;
+    this.controls.maxDistance = dist * 8;
+    this.controls.update();
   }
 
   planeRange(axis) {
@@ -296,9 +320,18 @@ export class Viewer {
     this.planeHelper.visible = this.showPlaneHelper && this.viewMode !== "shape";
   }
 
+  applyGridVisibility() {
+    this.grid.visible = this.showGrid && this.viewMode !== "shape";
+  }
+
   setShowPlaneHelper(on) {
     this.showPlaneHelper = !!on;
     this.applyPlaneVisibility();
+  }
+
+  setShowGrid(on) {
+    this.showGrid = !!on;
+    this.applyGridVisibility();
   }
 
   updatePlaneHelper() {
@@ -402,7 +435,7 @@ export class Viewer {
     this.shapeOnly = mode === "shape";
     const clipOn = mode === "below";
     this.modelGroup.visible = mode !== "shape";
-    this.grid.visible = mode !== "shape";
+    this.applyGridVisibility();
     this.applyPlaneVisibility();
     this.sectionLines.visible = true;
     this.updateClipPlane();
