@@ -6,7 +6,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#0b0d12" />
   <title>剖形 SectionScan</title>
-  <link rel="stylesheet" href="./css/app.css?v=21" />
+  <link rel="stylesheet" href="./css/app.css?v=22" />
   <script type="importmap">
   {
     "imports": {
@@ -22,7 +22,7 @@
         <h1>剖形</h1>
         <span>掃描外形 · 看橫截面 · 量毫米</span>
       </div>
-      <div class="badge">v1.8</div>
+      <div class="badge">v1.9</div>
     </header>
 
     <nav class="tabs">
@@ -74,9 +74,20 @@
         </div>
       </section>
       <div class="toast" id="toast"></div>
+      <div id="scalePrompt" class="scale-prompt" hidden>
+        <p>這兩點的真實距離（毫米）</p>
+        <div class="row">
+          <input id="scaleMmInput" type="number" inputmode="decimal" value="100" />
+          <button type="button" id="scaleMmOk" class="primary">確定</button>
+        </div>
+        <button type="button" id="scaleMmCancel" class="ghost">取消</button>
+      </div>
     </main>
 
     <footer class="dock">
+      <div class="dock-collapse-row">
+        <button type="button" id="toggleDock" class="ghost">收起控制</button>
+      </div>
       <div class="dock-group dock-capture">
         <div class="row">
           <label class="file-btn">拍張相
@@ -151,7 +162,7 @@
       </div>
     </footer>
   </div>
-  <script src="./js/media.js?v=21"></script>
-  <script type="module" src="./js/app.js?v=21"></script>
+  <script src="./js/media.js?v=22"></script>
+  <script type="module" src="./js/app.js?v=22"></script>
 </body>
 </html>

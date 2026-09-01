@@ -1,4 +1,4 @@
-import { Viewer } from "./viewer.js?v=21";
+import { Viewer } from "./viewer.js?v=22";
 
 const $ = (id) => document.getElementById(id);
 let viewer = null;
@@ -156,23 +156,96 @@ $("heightMm").addEventListener("change", () => {
   updateMetrics();
 });
 
+function hideScalePrompt() {
+  const el = $("scalePrompt");
+  if (el) el.hidden = true;
+}
+
+function showScalePrompt() {
+  const el = $("scalePrompt");
+  const input = $("scaleMmInput");
+  if (!el) return;
+  el.hidden = false;
+  if (input) {
+    input.value = input.value || "100";
+    setTimeout(() => input.focus(), 50);
+  }
+}
+
 $("pickScale").addEventListener("click", () => {
-  viewer.pickScale = true;
-  viewer.scalePts = [];
+  hideScalePrompt();
+  if (viewer.beginPickScale) viewer.beginPickScale();
+  else {
+    viewer.pickScale = true;
+    viewer.scalePts = [];
+  }
   show("panel-model");
-  toast("在 3D 模型上點兩個已知距離的位置");
+  toast("輕點模型上兩個已知距離的位置");
 });
 
-addEventListener("scalepicked", (e) => {
-  const known = Number(prompt("這兩點的真實距離是多少毫米？", "100"));
-  if (known > 0 && e.detail.units > 0) {
-    viewer.mmPerUnit = known / e.detail.units;
-    $("heightMm").value = String(Math.round(viewer.mmPerUnit * viewer.modelHeightUnits));
-    viewer.draw2d();
-    updateMetrics();
-    toast("已用兩點距離完成定標");
-  }
+addEventListener("scalemiss", () => {
+  toast("未點中模型，再輕點一次");
 });
+
+addEventListener("scalepoint", (e) => {
+  const n = e.detail && e.detail.n;
+  if (n === 1) toast("已記第 1 點，再點第 2 點");
+});
+
+let lastScaleUnits = 0;
+addEventListener("scalepicked", (e) => {
+  lastScaleUnits = e.detail && e.detail.units;
+  showScalePrompt();
+});
+
+if ($("scaleMmOk")) {
+  $("scaleMmOk").addEventListener("click", () => {
+    const known = Number($("scaleMmInput") && $("scaleMmInput").value);
+    hideScalePrompt();
+    if (known > 0 && lastScaleUnits > 0) {
+      viewer.mmPerUnit = known / lastScaleUnits;
+      $("heightMm").value = String(Math.round(viewer.mmPerUnit * viewer.modelHeightUnits));
+      viewer.draw2d();
+      updateMetrics();
+      toast("已用兩點距離完成定標");
+    } else {
+      toast("請輸入有效毫米數");
+    }
+  });
+}
+if ($("scaleMmCancel")) {
+  $("scaleMmCancel").addEventListener("click", () => {
+    hideScalePrompt();
+    if (viewer.clearScaleMarks) viewer.clearScaleMarks();
+  });
+}
+
+function applyDockCollapsed(on) {
+  const app = document.querySelector(".app");
+  if (app) app.classList.toggle("dock-collapsed", !!on);
+  const btn = $("toggleDock");
+  if (btn) btn.textContent = on ? "顯示控制" : "收起控制";
+  requestAnimationFrame(() => viewer && viewer.resize());
+}
+
+function readDockCollapsed() {
+  try {
+    return localStorage.getItem("sectionscan.hideDock") === "1";
+  } catch {
+    return false;
+  }
+}
+
+applyDockCollapsed(readDockCollapsed());
+if ($("toggleDock")) {
+  $("toggleDock").addEventListener("click", () => {
+    const next = !document.querySelector(".app").classList.contains("dock-collapsed");
+    try {
+      localStorage.setItem("sectionscan.hideDock", next ? "1" : "0");
+    } catch (_) {}
+    applyDockCollapsed(next);
+  });
+}
 
 $("exportSvg").addEventListener("click", () => {
   const svg = viewer.exportSvg();

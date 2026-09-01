@@ -62,6 +62,8 @@ export class Viewer {
       new THREE.LineBasicMaterial({ color: 0xffd36e })
     );
     this.scene.add(this.sectionLines);
+    this.scaleMarks = new THREE.Group();
+    this.scene.add(this.scaleMarks);
 
     this.raycaster = new THREE.Raycaster();
     this.pointer = new THREE.Vector2();
@@ -69,7 +71,8 @@ export class Viewer {
     this.loadDemo("vase");
     this.resize();
     addEventListener("resize", () => this.resize());
-    canvas3d.addEventListener("pointerdown", (e) => this.on3dPointer(e));
+    canvas3d.addEventListener("pointerdown", (e) => this.on3dPointerDown(e));
+    canvas3d.addEventListener("pointerup", (e) => this.on3dPointerUp(e));
     canvas2d.addEventListener("pointerdown", (e) => this.on2dPointer(e));
     this.loop();
   }
@@ -552,16 +555,82 @@ export class Viewer {
     this.draw2d();
   }
 
-  on3dPointer(e) {
+  clearScaleMarks() {
+    while (this.scaleMarks && this.scaleMarks.children.length) {
+      const c = this.scaleMarks.children.pop();
+      c.geometry?.dispose();
+      c.material?.dispose();
+    }
+  }
+
+  addScaleMark(point) {
+    const r = Math.max((this.modelHeightUnits || 1) * 0.018, 0.01);
+    const m = new THREE.Mesh(
+      new THREE.SphereGeometry(r, 12, 12),
+      new THREE.MeshBasicMaterial({ color: 0xffd36e, depthTest: false })
+    );
+    m.position.copy(point);
+    m.renderOrder = 20;
+    this.scaleMarks.add(m);
+  }
+
+  beginPickScale() {
+    this.pickScale = true;
+    this.scalePts = [];
+    this.clearScaleMarks();
+    this._ptr = null;
+  }
+
+  on3dPointerDown(e) {
     if (!this.pickScale) return;
+    this._ptr = { x: e.clientX, y: e.clientY };
+  }
+
+  on3dPointerUp(e) {
+    if (!this.pickScale || !this._ptr) return;
+    const dx = e.clientX - this._ptr.x;
+    const dy = e.clientY - this._ptr.y;
+    this._ptr = null;
+    if (dx * dx + dy * dy > 196) return;
+    this.pickScaleAt(e);
+  }
+
+  pickScaleAt(e) {
     const rect = this.canvas3d.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
     this.pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     this.pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     this.raycaster.setFromCamera(this.pointer, this.camera);
-    const hits = this.raycaster.intersectObject(this.modelGroup, true);
-    if (!hits.length) return;
-    this.scalePts.push(hits[0].point.clone());
-    if (this.scalePts.length === 2) {
+    this.raycaster.firstHitOnly = true;
+    const meshes = [];
+    const restore = [];
+    this.modelGroup.traverse((o) => {
+      if (!o.isMesh || !o.visible) return;
+      meshes.push(o);
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      mats.forEach((mat) => {
+        if (!mat) return;
+        restore.push([mat, mat.side]);
+        mat.side = THREE.DoubleSide;
+      });
+    });
+    let hits = [];
+    try {
+      hits = this.raycaster.intersectObjects(meshes, false);
+    } finally {
+      restore.forEach(([mat, side]) => {
+        mat.side = side;
+      });
+    }
+    if (!hits.length) {
+      dispatchEvent(new CustomEvent("scalemiss"));
+      return;
+    }
+    const pt = hits[0].point.clone();
+    this.scalePts.push(pt);
+    this.addScaleMark(pt);
+    dispatchEvent(new CustomEvent("scalepoint", { detail: { n: this.scalePts.length } }));
+    if (this.scalePts.length >= 2) {
       const d = this.scalePts[0].distanceTo(this.scalePts[1]);
       this.lastScaleUnits = d;
       this.pickScale = false;
