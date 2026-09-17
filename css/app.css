@@ -69,7 +69,7 @@ html, body {
 
 .tabs {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 6px;
   padding: 0 8px 8px;
 }
@@ -396,3 +396,27 @@ input[type=number], input[type=text], input[type=password] {
   padding: 10px 8px;
   font-size: 16px;
 }
+
+.app.mode-library .stage { overflow: auto; -webkit-overflow-scrolling: touch; }
+.app.mode-library .dock-library { display: grid; }
+.dock-library { display: none; }
+.lib-list { display: grid; gap: 8px; padding: 0 12px 96px; }
+.lib-item {
+  display: flex; gap: 8px; align-items: center;
+  padding: 10px 12px; border: 1px solid var(--line);
+  border-radius: 12px; background: var(--panel, var(--bg-2));
+}
+.lib-item.on { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(110,224,196,.35); }
+.lib-item-main {
+  flex: 1; min-width: 0; text-align: left; background: transparent;
+  border: 0; color: inherit; padding: 0; cursor: pointer; font: inherit;
+}
+.lib-item-name { display: block; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lib-item-meta { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+.lib-item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.lib-item-actions button { flex: 1; }
+.lib-empty { text-align: center; padding: 28px 12px; }
+.lib-empty h2 { color: var(--muted); font-weight: 600; }
+.lib-empty[hidden], #libraryDialog[hidden], #libraryDialogRow[hidden] { display: none !important; }
+.lib-import { display: inline-block; margin-top: 8px; }
+.lib-danger { color: var(--danger, #ff6b7a); }

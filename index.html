@@ -6,7 +6,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#0b0d12" />
   <title>剖形 SectionScan</title>
-  <link rel="stylesheet" href="./css/app.css?v=23" />
+  <link rel="stylesheet" href="./css/app.css?v=1.11" />
   <script type="importmap">
   {
     "imports": {
@@ -22,11 +22,12 @@
         <h1>剖形</h1>
         <span>掃描外形 · 看橫截面 · 量毫米</span>
       </div>
-      <div class="badge">v1.10</div>
+      <div class="badge">v1.11</div>
     </header>
 
     <nav class="tabs">
       <button class="tab active" data-panel="panel-capture">掃描</button>
+      <button class="tab" data-panel="panel-library">圖庫</button>
       <button class="tab" data-panel="panel-model">模型</button>
       <button class="tab" data-panel="panel-section">截面</button>
       <button class="tab" data-panel="panel-info">說明</button>
@@ -42,6 +43,30 @@
           <p id="photoCount">尚未加入相片或影片</p>
         </div>
         <div class="thumbs" id="thumbs"></div>
+      </section>
+
+      
+      <section id="panel-library" class="panel">
+        <div class="card">
+          <h2>模型圖庫</h2>
+          <p>匯入嘅 USDZ／GLB 會保存在呢部裝置，重新打開網頁唔使再揀檔。資料只留喺本機，唔會上傳。</p>
+          <label class="file-btn primary lib-import">匯入模型
+            <input id="libraryModelInput" type="file" accept=".glb,.gltf,.usdz,model/gltf-binary,model/vnd.usdz+zip" />
+          </label>
+        </div>
+        <div id="libraryEmpty" class="card lib-empty">
+          <h2>尚未有模型</h2>
+          <p data-empty-msg>用「匯入模型」或掃描頁嘅「匯入 GLB／USDZ」，成功後會出現喺呢度。</p>
+        </div>
+        <div id="libraryList" class="lib-list"></div>
+        <div id="libraryDialog" class="scale-prompt lib-dialog" hidden>
+          <p id="libraryDialogTitle">重新命名</p>
+          <div class="row" id="libraryDialogRow">
+            <input id="libraryDialogInput" type="text" maxlength="80" enterkeyhint="done" autocomplete="off" />
+            <button type="button" id="libraryDialogOk" class="primary">確定</button>
+          </div>
+          <button type="button" id="libraryDialogCancel" class="ghost">取消</button>
+        </div>
       </section>
 
       <section id="panel-model" class="panel panel-fill">
@@ -117,6 +142,15 @@
         </div>
       </div>
 
+      
+      <div class="dock-group dock-library">
+        <div class="row">
+          <label class="file-btn primary">匯入 GLB／USDZ
+            <input id="libraryDockInput" type="file" accept=".glb,.gltf,.usdz,model/gltf-binary,model/vnd.usdz+zip" />
+          </label>
+        </div>
+      </div>
+
       <div class="dock-group dock-model">
         <div class="slider-wrap">
           <label><span>切面位置</span><span id="planeLabel">0.00</span></label>
@@ -162,7 +196,7 @@
       </div>
     </footer>
   </div>
-  <script src="./js/media.js?v=23"></script>
-  <script type="module" src="./js/app.js?v=23"></script>
+  <script src="./js/media.js?v=1.11"></script>
+  <script type="module" src="./js/app.js?v=1.11"></script>
 </body>
 </html>

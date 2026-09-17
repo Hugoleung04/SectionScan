@@ -1,2 +1,276 @@
-/* SectionScan model library (IndexedDB). */
-const t="meta",e="files",r="sectionscan.lastModelId";function o(t){return(String(t||"").trim()||"未命名模型").replace(/[/\\]/g," ").slice(0,80)}function n(t){return"glb"===t?"model/gltf-binary":"gltf"===t?"model/gltf+json":"usdz"===t?"model/vnd.usdz+zip":"application/octet-stream"}export function typeLabel(t){const e=(t&&t.ext||"").toUpperCase();return"USDZ"===e||"GLB"===e||"GLTF"===e?e:e||"3D"}export function formatSize(t){const e=Number(t)||0;return e<1024?`${e} B`:e<1048576?`${(e/1024).toFixed(1)} KB`:`${(e/1048576).toFixed(1)} MB`}export function formatTime(t){const e=new Date(t);if(!t||Number.isNaN(e.getTime()))return"";try{return e.toLocaleString("zh-Hant-HK",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}catch{return e.toISOString().slice(0,16).replace("T"," ")}}export function storageErrorMessage(t){const e=t&&t.name||"",r=t&&t.message||"",o=`${e} ${r}`.toLowerCase();return"QuotaExceededError"===e||"NS_ERROR_DOM_QUOTA_REACHED"===e||t&&22===t.code||o.includes("quota")?"儲存空間不足，無法把這個模型加入圖庫。請刪除圖庫裡較大的模型，或改用較小的 GLB。模型仍可在今次檢視，但重新整理後會消失。":"UnknownError"===e?"無法保存這個模型（檔案可能太大，或無痕模式限制 IndexedDB）。請改用較小的 GLB，或刪除圖庫中其他模型。模型仍可在今次檢視。":"InvalidStateError"===e||o.includes("private")||o.includes("the user denied")?"無法使用本機圖庫（可能是無痕模式，或瀏覽器限制 IndexedDB）。模型可以今次檢視，但不會保存。":`無法保存到圖庫：${r||e||"未知錯誤"}`}function a(){return new Promise((r,o)=>{if(!globalThis.indexedDB)return void o(new Error("這個瀏覽器不支援 IndexedDB"));const n=indexedDB.open("sectionscan-library",1);n.onupgradeneeded=()=>{const r=n.result;r.objectStoreNames.contains(t)||r.createObjectStore(t,{keyPath:"id"}),r.objectStoreNames.contains(e)||r.createObjectStore(e,{keyPath:"id"})},n.onsuccess=()=>r(n.result),n.onerror=()=>o(n.error||new Error("IndexedDB 開啟失敗")),n.onblocked=()=>o(new Error("IndexedDB 被其他分頁佔用，請關閉舊分頁後再試"))})}function i(t){return new Promise((e,r)=>{t.onsuccess=()=>e(t.result),t.onerror=()=>r(t.error||new Error("IndexedDB 操作失敗"))})}function c(t){return new Promise((e,r)=>{t.oncomplete=()=>e(),t.onerror=()=>r(t.error||new Error("IndexedDB 交易失敗")),t.onabort=()=>r(t.error||new Error("IndexedDB 交易中止"))})}export async function list(){const e=await a();try{const r=e.transaction(t,"readonly"),o=i(r.objectStore(t).getAll()),n=c(r),a=await o;await n;const s=Array.isArray(a)?a:[];return s.sort((t,e)=>(e.lastOpenedAt||e.createdAt||0)-(t.lastOpenedAt||t.createdAt||0)),s}finally{e.close()}}export async function get(r){if(!r)return null;const o=await a();try{const n=o.transaction([t,e],"readonly"),a=i(n.objectStore(t).get(r)),s=i(n.objectStore(e).get(r)),l=c(n),[d,u]=await Promise.all([a,s]);return await l,d&&u&&u.blob?{...d,blob:u.blob}:null}finally{o.close()}}export async function addFromFile(r){if(!r)throw new Error("沒有檔案可保存");const i=function(t){const e=String(t||"").toLowerCase().match(/\.([a-z0-9]+)$/);return e?e[1]:""}(r.name)||function(t){const e=(t&&t.type||"").toLowerCase();return e.includes("usdz")?"usdz":e.includes("gltf+json")?"gltf":(e.includes("gltf"),"glb")}(r),s=r.type||n(i),l=new Blob([r],{type:s}),d={id:globalThis.crypto&&crypto.randomUUID?crypto.randomUUID():`${Date.now().toString(36)}-${Math.random().toString(36).slice(2,10)}`,name:o(r.name),mime:s,ext:i,size:r.size||l.size||0,createdAt:Date.now(),lastOpenedAt:Date.now()},u=await a();try{const r=u.transaction([t,e],"readwrite");r.objectStore(t).put(d),r.objectStore(e).put({id:d.id,blob:l}),await c(r)}finally{u.close()}return await requestPersist(),writeLastId(d.id),d}export async function rename(e,r){const n=o(r);if(!n)throw new Error("名稱不能空白");const s=await a();try{const r=s.transaction(t,"readonly"),o=i(r.objectStore(t).get(e)),a=c(r),l=await o;if(await a,!l)throw new Error("找不到這個模型");l.name=n;const d=s.transaction(t,"readwrite");return d.objectStore(t).put(l),await c(d),l}finally{s.close()}}export async function remove(r){const o=await a();try{const n=o.transaction([t,e],"readwrite");n.objectStore(t).delete(r),n.objectStore(e).delete(r),await c(n)}finally{o.close()}readLastId()===r&&writeLastId("")}export async function touch(e){const r=await a();try{const o=r.transaction(t,"readonly"),n=i(o.objectStore(t).get(e)),a=c(o),s=await n;if(await a,!s)return null;s.lastOpenedAt=Date.now();const l=r.transaction(t,"readwrite");return l.objectStore(t).put(s),await c(l),writeLastId(e),s}finally{r.close()}}export async function toFile(t){if(!t||!t.blob)throw new Error("找不到模型檔案");const e=t.ext||"glb";let r=t.name||`model.${e}`;/\.[a-z0-9]+$/i.test(r)||(r+=`.${e}`);const o=t.mime||n(e);try{return new File([t.blob],r,{type:o})}catch{const e=t.blob.slice(0,t.blob.size,o);try{e.name=r}catch(t){}return e}}export function readLastId(){try{return localStorage.getItem(r)||""}catch{return""}}export function writeLastId(t){try{t?localStorage.setItem(r,t):localStorage.removeItem(r)}catch(t){}}export async function requestPersist(){try{navigator.storage&&navigator.storage.persist&&await navigator.storage.persist()}catch(t){}}
+const DB_NAME = "sectionscan-library";
+const DB_VERSION = 1;
+const META_STORE = "meta";
+const FILE_STORE = "files";
+const LAST_KEY = "sectionscan.lastModelId";
+
+function newId() {
+  if (globalThis.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function extOf(filename) {
+  const m = String(filename || "").toLowerCase().match(/\.([a-z0-9]+)$/);
+  return m ? m[1] : "";
+}
+
+function displayName(filename) {
+  const base = String(filename || "").trim() || "未命名模型";
+  return base.replace(/[/\\]/g, " ").slice(0, 80);
+}
+
+function mimeFromExt(ext) {
+  if (ext === "glb") return "model/gltf-binary";
+  if (ext === "gltf") return "model/gltf+json";
+  if (ext === "usdz") return "model/vnd.usdz+zip";
+  return "application/octet-stream";
+}
+
+function guessExt(file) {
+  const type = ((file && file.type) || "").toLowerCase();
+  if (type.includes("usdz")) return "usdz";
+  if (type.includes("gltf+json")) return "gltf";
+  if (type.includes("gltf")) return "glb";
+  return "glb";
+}
+
+export function typeLabel(meta) {
+  const ext = ((meta && meta.ext) || "").toUpperCase();
+  if (ext === "USDZ" || ext === "GLB" || ext === "GLTF") return ext;
+  return ext || "3D";
+}
+
+export function formatSize(bytes) {
+  const n = Number(bytes) || 0;
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+export function formatTime(ts) {
+  const d = new Date(ts);
+  if (!ts || Number.isNaN(d.getTime())) return "";
+  try {
+    return d.toLocaleString("zh-Hant-HK", {
+      month: "numeric",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  } catch {
+    return d.toISOString().slice(0, 16).replace("T", " ");
+  }
+}
+
+export function storageErrorMessage(err) {
+  const name = (err && err.name) || "";
+  const msg = (err && err.message) || "";
+  const text = `${name} ${msg}`.toLowerCase();
+  if (
+    name === "QuotaExceededError" ||
+    name === "NS_ERROR_DOM_QUOTA_REACHED" ||
+    (err && err.code === 22) ||
+    text.includes("quota")
+  ) {
+    return "儲存空間不足，無法把這個模型加入圖庫。請刪除圖庫裡較大的模型，或改用較小的 GLB。模型仍可在今次檢視，但重新整理後會消失。";
+  }
+  if (name === "UnknownError") {
+    return "無法保存這個模型（檔案可能太大，或無痕模式限制 IndexedDB）。請改用較小的 GLB，或刪除圖庫中其他模型。模型仍可在今次檢視。";
+  }
+  if (name === "InvalidStateError" || text.includes("private") || text.includes("the user denied")) {
+    return "無法使用本機圖庫（可能是無痕模式，或瀏覽器限制 IndexedDB）。模型可以今次檢視，但不會保存。";
+  }
+  return `無法保存到圖庫：${msg || name || "未知錯誤"}`;
+}
+
+function openDb() {
+  return new Promise((resolve, reject) => {
+    if (!globalThis.indexedDB) {
+      reject(new Error("這個瀏覽器不支援 IndexedDB"));
+      return;
+    }
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(META_STORE)) {
+        db.createObjectStore(META_STORE, { keyPath: "id" });
+      }
+      if (!db.objectStoreNames.contains(FILE_STORE)) {
+        db.createObjectStore(FILE_STORE, { keyPath: "id" });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error || new Error("IndexedDB 開啟失敗"));
+    req.onblocked = () => reject(new Error("IndexedDB 被其他分頁佔用，請關閉舊分頁後再試"));
+  });
+}
+
+function reqToPromise(req) {
+  return new Promise((resolve, reject) => {
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error || new Error("IndexedDB 操作失敗"));
+  });
+}
+
+function txDone(tx) {
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error || new Error("IndexedDB 交易失敗"));
+    tx.onabort = () => reject(tx.error || new Error("IndexedDB 交易中止"));
+  });
+}
+
+export async function list() {
+  const db = await openDb();
+  try {
+    const tx = db.transaction(META_STORE, "readonly");
+    const rowsP = reqToPromise(tx.objectStore(META_STORE).getAll());
+    const done = txDone(tx);
+    const rows = await rowsP;
+    await done;
+    const items = Array.isArray(rows) ? rows : [];
+    items.sort((a, b) => (b.lastOpenedAt || b.createdAt || 0) - (a.lastOpenedAt || a.createdAt || 0));
+    return items;
+  } finally {
+    db.close();
+  }
+}
+
+export async function get(id) {
+  if (!id) return null;
+  const db = await openDb();
+  try {
+    const tx = db.transaction([META_STORE, FILE_STORE], "readonly");
+    const metaP = reqToPromise(tx.objectStore(META_STORE).get(id));
+    const fileP = reqToPromise(tx.objectStore(FILE_STORE).get(id));
+    const done = txDone(tx);
+    const [meta, file] = await Promise.all([metaP, fileP]);
+    await done;
+    if (!meta || !file || !file.blob) return null;
+    return { ...meta, blob: file.blob };
+  } finally {
+    db.close();
+  }
+}
+
+export async function addFromFile(file) {
+  if (!file) throw new Error("沒有檔案可保存");
+  const ext = extOf(file.name) || guessExt(file);
+  const mime = file.type || mimeFromExt(ext);
+  const blob = new Blob([file], { type: mime });
+  const rec = {
+    id: newId(),
+    name: displayName(file.name),
+    mime,
+    ext,
+    size: file.size || blob.size || 0,
+    createdAt: Date.now(),
+    lastOpenedAt: Date.now()
+  };
+  const db = await openDb();
+  try {
+    const tx = db.transaction([META_STORE, FILE_STORE], "readwrite");
+    tx.objectStore(META_STORE).put(rec);
+    tx.objectStore(FILE_STORE).put({ id: rec.id, blob });
+    await txDone(tx);
+  } finally {
+    db.close();
+  }
+  await requestPersist();
+  writeLastId(rec.id);
+  return rec;
+}
+
+export async function rename(id, name) {
+  const next = displayName(name);
+  if (!next) throw new Error("名稱不能空白");
+  const db = await openDb();
+  try {
+    const tx1 = db.transaction(META_STORE, "readonly");
+    const recP = reqToPromise(tx1.objectStore(META_STORE).get(id));
+    const done1 = txDone(tx1);
+    const rec = await recP;
+    await done1;
+    if (!rec) throw new Error("找不到這個模型");
+    rec.name = next;
+    const tx2 = db.transaction(META_STORE, "readwrite");
+    tx2.objectStore(META_STORE).put(rec);
+    await txDone(tx2);
+    return rec;
+  } finally {
+    db.close();
+  }
+}
+
+export async function remove(id) {
+  const db = await openDb();
+  try {
+    const tx = db.transaction([META_STORE, FILE_STORE], "readwrite");
+    tx.objectStore(META_STORE).delete(id);
+    tx.objectStore(FILE_STORE).delete(id);
+    await txDone(tx);
+  } finally {
+    db.close();
+  }
+  if (readLastId() === id) writeLastId("");
+}
+
+export async function touch(id) {
+  const db = await openDb();
+  try {
+    const tx1 = db.transaction(META_STORE, "readonly");
+    const recP = reqToPromise(tx1.objectStore(META_STORE).get(id));
+    const done1 = txDone(tx1);
+    const rec = await recP;
+    await done1;
+    if (!rec) return null;
+    rec.lastOpenedAt = Date.now();
+    const tx2 = db.transaction(META_STORE, "readwrite");
+    tx2.objectStore(META_STORE).put(rec);
+    await txDone(tx2);
+    writeLastId(id);
+    return rec;
+  } finally {
+    db.close();
+  }
+}
+
+export async function toFile(record) {
+  if (!record || !record.blob) throw new Error("找不到模型檔案");
+  const ext = record.ext || "glb";
+  let name = record.name || `model.${ext}`;
+  if (!/\.[a-z0-9]+$/i.test(name)) name += `.${ext}`;
+  const type = record.mime || mimeFromExt(ext);
+  try {
+    return new File([record.blob], name, { type });
+  } catch {
+    const copy = record.blob.slice(0, record.blob.size, type);
+    try {
+      copy.name = name;
+    } catch (_) {}
+    return copy;
+  }
+}
+
+export function readLastId() {
+  try {
+    return localStorage.getItem(LAST_KEY) || "";
+  } catch {
+    return "";
+  }
+}
+
+export function writeLastId(id) {
+  try {
+    if (id) localStorage.setItem(LAST_KEY, id);
+    else localStorage.removeItem(LAST_KEY);
+  } catch (_) {}
+}
+
+export async function requestPersist() {
+  try {
+    if (navigator.storage && navigator.storage.persist) {
+      await navigator.storage.persist();
+    }
+  } catch (_) {}
+}

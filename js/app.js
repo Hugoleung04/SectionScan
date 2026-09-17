@@ -1,4 +1,5 @@
-import { Viewer } from "./viewer.js?v=23";
+import { Viewer } from "./viewer.js?v=1.11";
+import { initLibraryUi, clearActiveLibraryId, refreshLibrary } from "./library-ui.js?v=1.11";
 
 const $ = (id) => document.getElementById(id);
 let viewer = null;
@@ -33,13 +34,11 @@ function show(id) {
   $(id).classList.add("active");
   document.querySelector(`.tab[data-panel="${id}"]`).classList.add("active");
   const mode = id.replace("panel-", "");
-  document.querySelector(".app").className = `app mode-${mode}`;
-  requestAnimationFrame(() => viewer && viewer.resize());
+  const appEl = document.querySelector(".app");
+  const collapsed = appEl.classList.contains("dock-collapsed");
+  appEl.className = `app mode-${mode}`;
+  if (collapsed) appEl.classList.add("dock-collapsed");
 }
-
-document.querySelectorAll(".tab").forEach((btn) => {
-  btn.addEventListener("click", () => show(btn.dataset.panel));
-});
 
 function toast(msg, ms) {
   const el = $("toast");
@@ -50,14 +49,20 @@ function toast(msg, ms) {
 }
 
 $("useDemoVase").addEventListener("click", () => {
+  if (!viewer) return;
   viewer.loadDemo("vase");
+  clearActiveLibraryId();
+  refreshLibrary();
   syncPlaneSlider();
   $("heightMm").value = "280";
   show("panel-model");
   toast("已載入示範花瓶（高 280 mm）");
 });
 $("useDemoBox").addEventListener("click", () => {
+  if (!viewer) return;
   viewer.loadDemo("box");
+  clearActiveLibraryId();
+  refreshLibrary();
   syncPlaneSlider();
   $("heightMm").value = "400";
   show("panel-model");
@@ -65,41 +70,17 @@ $("useDemoBox").addEventListener("click", () => {
 });
 if ($("useDemoBowl")) {
   $("useDemoBowl").addEventListener("click", () => {
+    if (!viewer) return;
     viewer.loadDemo("bowl");
+    clearActiveLibraryId();
+    refreshLibrary();
     syncPlaneSlider();
-    $("heightMm").value = "220";
+    $("heightMm").value = "120";
     show("panel-model");
-    toast("已載入示範碗（高 220 mm）");
+    toast("已載入示範碗（高 120 mm）");
   });
 }
 
-$("glbInput").addEventListener("change", async (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  try {
-    const name = (file.name || "").toLowerCase();
-    const type = (file.type || "").toLowerCase();
-    const isUsdz =
-      name.endsWith(".usdz") ||
-      type === "model/vnd.usdz+zip" ||
-      type === "application/zip+usdz";
-    if (isUsdz) toast("正在載入 USDZ…", 8000);
-    await viewer.loadModel(file);
-    syncPlaneSlider();
-    $("heightMm").value = "1000";
-    show("panel-model");
-    toast("已匯入 USDZ／GLB，請先定標真實高度");
-  } catch (err) {
-    const msg = (err && err.message) || "";
-    if (msg.includes("這個 USDZ 沒有可顯示的網格")) toast(msg, 5000);
-    else toast("匯入失敗，請用 GLB 或 USDZ");
-    console.error(err);
-  }
-});
-
-$("axisX").addEventListener("click", () => setAxis("x"));
-$("axisY").addEventListener("click", () => setAxis("y"));
-$("axisZ").addEventListener("click", () => setAxis("z"));
 
 function onPlaneSliderInput(e) {
   const v = Number(e.target.value);
@@ -389,3 +370,13 @@ if (viewer) {
   updateMetrics();
   setAxis("y");
 }
+
+initLibraryUi({
+  toast,
+  show,
+  getViewer: () => viewer,
+  syncPlaneSlider,
+  updateMetrics,
+  setShowPlane,
+});
+
