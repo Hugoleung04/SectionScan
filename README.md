@@ -8,6 +8,7 @@
 
 - 用 iPhone 拍攝或加入多張相片
 - 載入示範模型（花瓶／箱／碗）練習切面
+- 圖庫：匯入的模型保存在本機（IndexedDB），重新打開可直接載入、改名、刪除
 - 匯入 GLB（Polycam、Scaniverse、RealityScan 匯出檔）或 USDZ（Abound／iOS；支援 binary USDC）
 - 移動 X / Y / Z 切面
 - 看 2D 截面輪廓與寬高（mm）
@@ -52,6 +53,7 @@ python3 -m http.server 8080
 index.html              網頁 App 入口
 css/app.css
 js/app.js
+js/library.js           本機模型圖庫（IndexedDB）
 js/viewer.js
 js/section.js           切面求交演算法
 ios/SectionScan.xcodeproj  iOS 原生 App（Object Capture）
